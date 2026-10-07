@@ -29,14 +29,15 @@ impl BotProcess {
     pub fn spawn(
         player_id: usize,
         bot_folder: &Path,
+        launch_cmd: &str,
+        launch_args: &[String],
         core_id: usize,
         ram_limit_mb: u64,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let ram_bytes = ram_limit_mb * 1024 * 1024;
 
-        let mut cmd = Command::new("python3");
-        cmd.arg("-u")
-            .arg("py_driver.py")
+        let mut cmd = Command::new(launch_cmd);
+        cmd.args(launch_args)
             .current_dir(bot_folder)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -65,8 +66,6 @@ impl BotProcess {
         let mut child = cmd.spawn()?;
         let stdin = child.stdin.take().ok_or("Failed to open stdin")?;
         let stdout = child.stdout.take().ok_or("Failed to open stdout")?;
-        
-        // Bọc trực tiếp ChildStdout vào BufReader
         let stdout_reader = BufReader::new(stdout);
 
         Ok(Self {
@@ -82,10 +81,9 @@ impl BotProcess {
         self.stdin.flush().map_err(|_| BotError::BrokenPipe)
     }
 
+    /// Đọc nước đi sử dụng poll(2) trực tiếp - zero thread overhead
     pub fn get_move_fast(&mut self, timeout: Duration) -> Result<(String, Duration), BotError> {
         let start = Instant::now();
-        
-        // Lấy BorrowedFd trực tiếp từ ChildStdout
         let fd = self.stdout_reader.get_ref().as_fd();
 
         let mut poll_fds = [PollFd::new(fd, PollFlags::POLLIN)];

@@ -24,6 +24,8 @@ impl MatchRunner {
         let bot0 = match BotProcess::spawn(
             0,
             &bot0_info.run_dir,
+            &bot0_info.launch_cmd,
+            &bot0_info.launch_args,
             config.bot0_core,
             config.ram_limit_mb,
         ) {
@@ -34,6 +36,8 @@ impl MatchRunner {
         let bot1 = match BotProcess::spawn(
             1,
             &bot1_info.run_dir,
+            &bot1_info.launch_cmd,
+            &bot1_info.launch_args,
             config.bot1_core,
             config.ram_limit_mb,
         ) {
@@ -49,13 +53,13 @@ impl MatchRunner {
             let cur_p = state.current_player;
             let other_p = 1 - cur_p;
 
-            // Serialize bàn cờ 9x9 sang JSON
+            // 1. Serialize bàn cờ 9x9 sang JSON
             let state_json = serde_json::to_string(&state).unwrap_or_default();
             if let Err(_) = bots[cur_p].send_state(&state_json) {
                 return MatchResult::Win { winner: other_p, reason: "Broken Pipe khi gửi dữ liệu".to_string() };
             }
 
-            // Đọc nước đi (I/O tối ưu qua poll)
+            // 2. Đọc nước đi (I/O tối ưu qua poll)
             let (raw_move, _elapsed) = match bots[cur_p].get_move_fast(move_timeout) {
                 Ok(res) => res,
                 Err(BotError::Timeout(d)) => return MatchResult::Win { winner: other_p, reason: format!("Timeout (> {:.2?})", d) },
@@ -63,18 +67,18 @@ impl MatchRunner {
                 Err(e) => return MatchResult::Win { winner: other_p, reason: format!("Lỗi I/O: {:?}", e) },
             };
 
-            // Parse nước đi: Thí sinh trả về JSON dạng: {"from_x": 0, "from_y": 1, "to_x": 0, "to_y": 2}
+            // 3. Parse nước đi
             let move_obj: Move = match serde_json::from_str(&raw_move) {
                 Ok(m) => m,
                 Err(_) => return MatchResult::Win { winner: other_p, reason: format!("Sai định dạng nước đi: '{}'", raw_move) },
             };
 
-            // Kiểm tra tính hợp lệ qua Logic Game
+            // 4. Kiểm tra tính hợp lệ qua Logic Game
             if !game.is_legal_move(cur_p, &move_obj) {
                 return MatchResult::Win { winner: other_p, reason: format!("Nước đi phạm luật: {:?}", move_obj) };
             }
 
-            // Áp dụng nước đi
+            // 5. Áp dụng nước đi
             match game.apply_move(&move_obj) {
                 MatchResult::Ongoing => continue,
                 terminal => return terminal,
