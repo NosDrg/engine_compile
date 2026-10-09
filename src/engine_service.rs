@@ -8,6 +8,8 @@ use std::path::Path;
 pub struct MatchOutcome {
     pub winner_id: Option<usize>,
     pub reason: String,
+    pub bot0_peak_ram_mb: f64,
+    pub bot1_peak_ram_mb: f64,
 }
 
 pub struct EngineService {
@@ -21,8 +23,6 @@ impl EngineService {
         }
     }
 
-    /// HÀM 1: Kiểm tra cú pháp khi thí sinh nộp/đổi code
-    /// Giao thức truyền: ID, chuỗi code, chuỗi ngôn ngữ ("python", "cpp", "java")
     pub fn validate_code(&self, temp_sub_id: &str, source_code: &str, lang_str: &str) -> Result<(), String> {
         let lang = Language::from_str(lang_str)?;
         let bot = self.manager.prepare_submission(temp_sub_id, source_code, lang)?;
@@ -30,8 +30,6 @@ impl EngineService {
         Ok(())
     }
 
-    /// HÀM 2: Nhận thông tin 2 bot từ Database và tổ chức trận đấu
-    /// Hỗ trợ cả đấu chéo ngôn ngữ (ví dụ Bot 0 viết bằng "cpp" đấu với Bot 1 viết bằng "python")
     pub fn run_duel<G: GameLogic>(
         &self,
         bot0_sub_id: &str,
@@ -58,21 +56,27 @@ impl EngineService {
             max_moves: 100,
         };
 
-        let result = MatchRunner::run_match(config, &bot0, &bot1, game);
+        // Chạy trận đấu
+        let full_result = MatchRunner::run_match(config, &bot0, &bot1, game);
 
+        // Dọn dẹp sandbox
         self.manager.cleanup(bot0);
         self.manager.cleanup(bot1);
 
-        match result {
-            MatchResult::Win { winner, reason } => Ok(MatchOutcome {
-                winner_id: Some(winner),
-                reason,
-            }),
-            MatchResult::Draw { reason } => Ok(MatchOutcome {
-                winner_id: None,
-                reason,
-            }),
-            MatchResult::Ongoing => Err("Lỗi trạng thái trận đấu".to_string()),
-        }
+        let (winner_id, reason) = match full_result.result {
+            MatchResult::Win { winner, reason } => (Some(winner), reason),
+            MatchResult::Draw { reason } => (None, reason),
+            MatchResult::Ongoing => return Err("Lỗi trạng thái trận đấu".to_string()),
+        };
+
+        let bot0_ram_mb = (full_result.bot0_peak_ram_bytes as f64) / (1024.0 * 1024.0);
+        let bot1_ram_mb = (full_result.bot1_peak_ram_bytes as f64) / (1024.0 * 1024.0);
+
+        Ok(MatchOutcome {
+            winner_id,
+            reason,
+            bot0_peak_ram_mb: (bot0_ram_mb * 100.0).round() / 100.0,
+            bot1_peak_ram_mb: (bot1_ram_mb * 100.0).round() / 100.0,
+        })
     }
 }

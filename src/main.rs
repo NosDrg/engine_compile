@@ -124,12 +124,14 @@ def get_move(state):
         "sub_101", code_bot_a, "python",
         "sub_102", code_bot_b, "python",
         game,
-        0, 1, // Core 0 và Core 1
+        0, 1,
     ) {
         Ok(outcome) => {
             println!("Trận đấu kết thúc!");
             println!("Người thắng: {:?}", outcome.winner_id);
             println!("Lý do: {}", outcome.reason);
+            println!("Đỉnh RAM Bot 0: {} MB", outcome.bot0_peak_ram_mb);
+            println!("Đỉnh RAM Bot 1: {} MB", outcome.bot1_peak_ram_mb);
         }
         Err(e) => eprintln!("Lỗi khi chạy trận: {}", e),
     }

@@ -3,6 +3,7 @@ use nix::poll::{poll, PollFd, PollFlags, PollTimeout};
 use nix::sched::{sched_setaffinity, CpuSet};
 use nix::sys::resource::{setrlimit, Resource};
 use nix::unistd::Pid;
+use std::fs;
 use std::io::{BufRead, BufReader, Write};
 use std::os::fd::AsFd;
 use std::os::unix::process::CommandExt;
@@ -23,6 +24,7 @@ pub struct BotProcess {
     child: Child,
     stdin: ChildStdin,
     stdout_reader: BufReader<ChildStdout>,
+    pub peak_ram_bytes: u64, // Theo dõi đỉnh RAM thực tế
 }
 
 impl BotProcess {
@@ -54,7 +56,7 @@ impl BotProcess {
                     return Err(std::io::Error::last_os_error());
                 }
 
-                // 2. Khóa trần RAM tối đa
+                // 2. Khóa trần RAM tối đa qua kernel
                 if setrlimit(Resource::RLIMIT_AS, ram_bytes, ram_bytes).is_err() {
                     return Err(std::io::Error::last_os_error());
                 }
@@ -73,7 +75,28 @@ impl BotProcess {
             child,
             stdin,
             stdout_reader,
+            peak_ram_bytes: 0,
         })
+    }
+
+    /// Đọc lượng RAM thực tế (Resident Set Size - RSS) qua /proc/<pid>/statm
+    pub fn update_peak_memory(&mut self) {
+        let pid = self.child.id();
+        let statm_path = format!("/proc/{}/statm", pid);
+
+        if let Ok(content) = fs::read_to_string(statm_path) {
+            let parts: Vec<&str> = content.split_whitespace().collect();
+            // Cột thứ 2 trong statm đại diện cho số pages bộ nhớ thực tế (resident)
+            if parts.len() >= 2 {
+                if let Ok(resident_pages) = parts[1].parse::<u64>() {
+                    let page_size = 4096; // 4KB per page trên x86_64 Linux
+                    let current_bytes = resident_pages * page_size;
+                    if current_bytes > self.peak_ram_bytes {
+                        self.peak_ram_bytes = current_bytes;
+                    }
+                }
+            }
+        }
     }
 
     pub fn send_state(&mut self, state_str: &str) -> Result<(), BotError> {
@@ -81,7 +104,6 @@ impl BotProcess {
         self.stdin.flush().map_err(|_| BotError::BrokenPipe)
     }
 
-    /// Đọc nước đi sử dụng poll(2) trực tiếp - zero thread overhead
     pub fn get_move_fast(&mut self, timeout: Duration) -> Result<(String, Duration), BotError> {
         let start = Instant::now();
         let fd = self.stdout_reader.get_ref().as_fd();

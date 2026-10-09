@@ -1,4 +1,4 @@
-// src/runner.rs
+// Trong src/runner.rs
 use crate::game_interface::{GameLogic, MatchResult, Move};
 use crate::process::{BotError, BotProcess};
 use crate::submission_manager::PreparedBot;
@@ -12,6 +12,13 @@ pub struct MatchConfig {
     pub max_moves: usize,
 }
 
+#[derive(Debug)]
+pub struct FullMatchResult {
+    pub result: MatchResult,
+    pub bot0_peak_ram_bytes: u64,
+    pub bot1_peak_ram_bytes: u64,
+}
+
 pub struct MatchRunner;
 
 impl MatchRunner {
@@ -20,7 +27,7 @@ impl MatchRunner {
         bot0_info: &PreparedBot,
         bot1_info: &PreparedBot,
         mut game: G,
-    ) -> MatchResult {
+    ) -> FullMatchResult {
         let bot0 = match BotProcess::spawn(
             0,
             &bot0_info.run_dir,
@@ -30,7 +37,11 @@ impl MatchRunner {
             config.ram_limit_mb,
         ) {
             Ok(b) => b,
-            Err(e) => return MatchResult::Win { winner: 1, reason: format!("Không thể khởi chạy Bot 0: {}", e) },
+            Err(e) => return FullMatchResult {
+                result: MatchResult::Win { winner: 1, reason: format!("Không thể khởi chạy Bot 0: {}", e) },
+                bot0_peak_ram_bytes: 0,
+                bot1_peak_ram_bytes: 0,
+            },
         };
 
         let bot1 = match BotProcess::spawn(
@@ -42,49 +53,77 @@ impl MatchRunner {
             config.ram_limit_mb,
         ) {
             Ok(b) => b,
-            Err(e) => return MatchResult::Win { winner: 0, reason: format!("Không thể khởi chạy Bot 1: {}", e) },
+            Err(e) => return FullMatchResult {
+                result: MatchResult::Win { winner: 0, reason: format!("Không thể khởi chạy Bot 1: {}", e) },
+                bot0_peak_ram_bytes: bot0.peak_ram_bytes,
+                bot1_peak_ram_bytes: 0,
+            },
         };
 
         let move_timeout = Duration::from_millis(config.timeout_per_move_ms);
         let mut bots = [bot0, bot1];
+        let mut final_result = MatchResult::Draw { reason: "Hết số lượt đánh tối đa".to_string() };
 
         for _ in 0..config.max_moves {
             let state = game.get_current_state();
             let cur_p = state.current_player;
             let other_p = 1 - cur_p;
 
-            // 1. Serialize bàn cờ 9x9 sang JSON
             let state_json = serde_json::to_string(&state).unwrap_or_default();
             if let Err(_) = bots[cur_p].send_state(&state_json) {
-                return MatchResult::Win { winner: other_p, reason: "Broken Pipe khi gửi dữ liệu".to_string() };
+                final_result = MatchResult::Win { winner: other_p, reason: "Broken Pipe khi gửi dữ liệu".to_string() };
+                break;
             }
 
-            // 2. Đọc nước đi (I/O tối ưu qua poll)
             let (raw_move, _elapsed) = match bots[cur_p].get_move_fast(move_timeout) {
                 Ok(res) => res,
-                Err(BotError::Timeout(d)) => return MatchResult::Win { winner: other_p, reason: format!("Timeout (> {:.2?})", d) },
-                Err(BotError::RuntimeCrash(err)) => return MatchResult::Win { winner: other_p, reason: err },
-                Err(e) => return MatchResult::Win { winner: other_p, reason: format!("Lỗi I/O: {:?}", e) },
+                Err(BotError::Timeout(d)) => {
+                    final_result = MatchResult::Win { winner: other_p, reason: format!("Timeout (> {:.2?})", d) };
+                    break;
+                }
+                Err(BotError::RuntimeCrash(err)) => {
+                    final_result = MatchResult::Win { winner: other_p, reason: err };
+                    break;
+                }
+                Err(e) => {
+                    final_result = MatchResult::Win { winner: other_p, reason: format!("Lỗi I/O: {:?}", e) };
+                    break;
+                }
             };
 
-            // 3. Parse nước đi
+            // Cập nhật mức sử dụng RAM thực tế
+            bots[cur_p].update_peak_memory();
+
             let move_obj: Move = match serde_json::from_str(&raw_move) {
                 Ok(m) => m,
-                Err(_) => return MatchResult::Win { winner: other_p, reason: format!("Sai định dạng nước đi: '{}'", raw_move) },
+                Err(_) => {
+                    final_result = MatchResult::Win { winner: other_p, reason: format!("Sai định dạng nước đi: '{}'", raw_move) };
+                    break;
+                }
             };
 
-            // 4. Kiểm tra tính hợp lệ qua Logic Game
             if !game.is_legal_move(cur_p, &move_obj) {
-                return MatchResult::Win { winner: other_p, reason: format!("Nước đi phạm luật: {:?}", move_obj) };
+                final_result = MatchResult::Win { winner: other_p, reason: format!("Nước đi phạm luật: {:?}", move_obj) };
+                break;
             }
 
-            // 5. Áp dụng nước đi
             match game.apply_move(&move_obj) {
                 MatchResult::Ongoing => continue,
-                terminal => return terminal,
+                terminal => {
+                    final_result = terminal;
+                    break;
+                }
             }
         }
 
-        MatchResult::Draw { reason: "Hết số lượt đánh tối đa".to_string() }
+        let [mut b0, mut b1] = bots;
+        b0.update_peak_memory();
+        b1.update_peak_memory();
+
+        FullMatchResult {
+            result: final_result,
+            bot0_peak_ram_bytes: b0.peak_ram_bytes,
+            bot1_peak_ram_bytes: b1.peak_ram_bytes,
+        }
     }
 }
