@@ -24,7 +24,7 @@ pub struct BotProcess {
     child: Child,
     stdin: ChildStdin,
     stdout_reader: BufReader<ChildStdout>,
-    pub peak_ram_bytes: u64, // Theo dõi đỉnh RAM thực tế
+    pub peak_ram_bytes: u64,
 }
 
 impl BotProcess {
@@ -47,7 +47,6 @@ impl BotProcess {
 
         unsafe {
             cmd.pre_exec(move || {
-                // 1. Ghim Core CPU (CPU Pinning)
                 let mut cpuset = CpuSet::new();
                 if cpuset.set(core_id).is_err() {
                     return Err(std::io::Error::last_os_error());
@@ -56,7 +55,6 @@ impl BotProcess {
                     return Err(std::io::Error::last_os_error());
                 }
 
-                // 2. Khóa trần RAM tối đa qua kernel
                 if setrlimit(Resource::RLIMIT_AS, ram_bytes, ram_bytes).is_err() {
                     return Err(std::io::Error::last_os_error());
                 }
@@ -79,17 +77,15 @@ impl BotProcess {
         })
     }
 
-    /// Đọc lượng RAM thực tế (Resident Set Size - RSS) qua /proc/<pid>/statm
     pub fn update_peak_memory(&mut self) {
         let pid = self.child.id();
         let statm_path = format!("/proc/{}/statm", pid);
 
         if let Ok(content) = fs::read_to_string(statm_path) {
             let parts: Vec<&str> = content.split_whitespace().collect();
-            // Cột thứ 2 trong statm đại diện cho số pages bộ nhớ thực tế (resident)
             if parts.len() >= 2 {
                 if let Ok(resident_pages) = parts[1].parse::<u64>() {
-                    let page_size = 4096; // 4KB per page trên x86_64 Linux
+                    let page_size = 4096;
                     let current_bytes = resident_pages * page_size;
                     if current_bytes > self.peak_ram_bytes {
                         self.peak_ram_bytes = current_bytes;

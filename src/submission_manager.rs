@@ -30,7 +30,7 @@ pub struct PreparedBot {
 
 pub struct SubmissionManager {
     base_workspace: PathBuf,
-    drivers_dir: PathBuf, // Thư mục chứa py_driver.py, cpp_driver.cpp, JavaDriver.java
+    drivers_dir: PathBuf,
 }
 
 impl SubmissionManager {
@@ -55,7 +55,6 @@ impl SubmissionManager {
             Language::Python => {
                 fs::write(bot_dir.join("solution.py"), source_code).map_err(|e| e.to_string())?;
 
-                // Kiểm tra cú pháp Python
                 let check = Command::new("python3")
                     .args(["-m", "py_compile", "solution.py"])
                     .current_dir(&bot_dir)
@@ -68,7 +67,6 @@ impl SubmissionManager {
                     return Err(format!("Lỗi cú pháp Python:\n{}", err));
                 }
 
-                // Copy driver python
                 fs::copy(
                     self.drivers_dir.join("python/py_driver.py"),
                     bot_dir.join("py_driver.py"),
@@ -89,7 +87,6 @@ impl SubmissionManager {
                     bot_dir.join("cpp_driver.cpp"),
                 ).map_err(|e| format!("Không tìm thấy cpp_driver.cpp: {}", e))?;
 
-                // Biên dịch C++ (-O3 tối ưu tốc độ tối đa)
                 let compile = Command::new("g++")
                     .args(["-O3", "-std=c++17", "cpp_driver.cpp", "solution.cpp", "-o", "bot_app"])
                     .current_dir(&bot_dir)
@@ -117,7 +114,6 @@ impl SubmissionManager {
                     bot_dir.join("JavaDriver.java"),
                 ).map_err(|e| format!("Không tìm thấy JavaDriver.java: {}", e))?;
 
-                // Biên dịch Java
                 let compile = Command::new("javac")
                     .args(["JavaDriver.java", "Solution.java"])
                     .current_dir(&bot_dir)
@@ -134,7 +130,6 @@ impl SubmissionManager {
                     submission_id: submission_id.to_string(),
                     run_dir: bot_dir,
                     launch_cmd: "java".to_string(),
-                    // Khống chế JVM: Heap 256MB, dọn rác đơn luồng nhẹ nhất
                     launch_args: vec![
                         "-Xms32m".to_string(),
                         "-Xmx256m".to_string(),

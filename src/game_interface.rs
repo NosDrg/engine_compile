@@ -39,6 +39,14 @@ pub enum MatchResult {
     Ongoing,
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct MoveRecord {
+    pub round: usize,
+    pub player: usize,
+    pub move_obj: Move,
+    pub elapsed_ms: u128,
+}
+
 pub trait GameLogic {
     fn get_initial_state(&self) -> GameStatePayload;
     fn is_legal_move(&self, player: usize, move_obj: &Move) -> bool;

@@ -11,3 +11,5 @@ __pycache__/
 .ruff_cache/
 .venv/
 venv/
+.vscode/
+main.rs

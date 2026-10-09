@@ -1,5 +1,5 @@
 // src/engine_service.rs
-use crate::game_interface::{GameLogic, MatchResult};
+use crate::game_interface::{GameLogic, MatchResult, MoveRecord};
 use crate::runner::{MatchConfig, MatchRunner};
 use crate::submission_manager::{Language, SubmissionManager};
 use std::path::Path;
@@ -10,6 +10,7 @@ pub struct MatchOutcome {
     pub reason: String,
     pub bot0_peak_ram_mb: f64,
     pub bot1_peak_ram_mb: f64,
+    pub move_history: Vec<MoveRecord>,
 }
 
 pub struct EngineService {
@@ -77,6 +78,7 @@ impl EngineService {
             reason,
             bot0_peak_ram_mb: (bot0_ram_mb * 100.0).round() / 100.0,
             bot1_peak_ram_mb: (bot1_ram_mb * 100.0).round() / 100.0,
+            move_history: full_result.move_history, // Trả danh sách nước đi về
         })
     }
 }

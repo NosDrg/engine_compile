@@ -87,14 +87,14 @@ fn main() {
 
     match engine.validate_code("check_invalid", invalid_python, "python") {
         Ok(_) => println!("✔ Code hợp lệ!"),
-        Err(e) => println!("✔ Bắt đúng lỗi cú pháp: {}", e),
+        Err(_e) => println!("✔ Đã phát hiện và chặn code lỗi cú pháp thành công!"),
     }
 
     // 3. Test hàm chạy trận đấu (run_duel)
     // Bot đọc vị trí quân hiện tại từ state['board'] để tránh bị báo Illegal Move
     println!("\n--- 2. KIỂM TRA HÀM RUN_DUEL ---");
 
-    let code_bot_a = r#"
+    let code_bot_python = r#"
 def get_move(state):
     board = state['board']
     for x in range(9):
@@ -105,33 +105,40 @@ def get_move(state):
     return {"from_x": 0, "from_y": 0, "to_x": 0, "to_y": 0}
 "#;
 
-    let code_bot_b = r#"
-def get_move(state):
-    board = state['board']
-    for x in range(9):
-        for y in range(9):
-            piece = board[x][y]
-            if piece and piece['owner'] == 1:
-                target_y = y - 1 if y > 0 else 8
-                return {"from_x": x, "from_y": y, "to_x": x, "to_y": target_y}
-    return {"from_x": 8, "from_y": 8, "to_x": 8, "to_y": 8}
+    // Bot B: C++
+    let code_bot_cpp = r#"
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+
+json get_move(const json& state) {
+    const auto& board = state["board"];
+    for (int x = 0; x < 9; ++x) {
+        for (int y = 0; y < 9; ++y) {
+            if (!board[x][y].is_null() && board[x][y]["owner"] == 1) {
+                int target_y = (y > 0) ? (y - 1) : 8;
+                return {{"from_x", x}, {"from_y", y}, {"to_x", x}, {"to_y", target_y}};
+            }
+        }
+    }
+    return {{"from_x", 8}, {"from_y", 8}, {"to_x", 8}, {"to_y", 8}};
+}
 "#;
 
     let game = RockPaperScissors9x9::new();
 
-    // Bên giao thức truyền: ID, Code, Ngôn ngữ cho cả 2 bot, Game logic, Core ghim (0 và 1)
+    println!("\n--- TEST THI ĐẤU CHÉO: PYTHON ĐẤU VỚI C++ ---");
     match engine.run_duel(
-        "sub_101", code_bot_a, "python",
-        "sub_102", code_bot_b, "python",
+        "sub_py", code_bot_python, "python",
+        "sub_cpp", code_bot_cpp, "cpp",
         game,
         0, 1,
     ) {
         Ok(outcome) => {
-            println!("Trận đấu kết thúc!");
+            println!("Trận đấu kết thúc thành công!");
             println!("Người thắng: {:?}", outcome.winner_id);
             println!("Lý do: {}", outcome.reason);
-            println!("Đỉnh RAM Bot 0: {} MB", outcome.bot0_peak_ram_mb);
-            println!("Đỉnh RAM Bot 1: {} MB", outcome.bot1_peak_ram_mb);
+            println!("Đỉnh RAM Bot 0 (Python): {} MB", outcome.bot0_peak_ram_mb);
+            println!("Đỉnh RAM Bot 1 (C++): {} MB", outcome.bot1_peak_ram_mb);
         }
         Err(e) => eprintln!("Lỗi khi chạy trận: {}", e),
     }

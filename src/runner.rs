@@ -1,5 +1,5 @@
-// Trong src/runner.rs
-use crate::game_interface::{GameLogic, MatchResult, Move};
+// src/runner.rs
+use crate::game_interface::{GameLogic, MatchResult, Move, MoveRecord};
 use crate::process::{BotError, BotProcess};
 use crate::submission_manager::PreparedBot;
 use std::time::Duration;
@@ -17,6 +17,7 @@ pub struct FullMatchResult {
     pub result: MatchResult,
     pub bot0_peak_ram_bytes: u64,
     pub bot1_peak_ram_bytes: u64,
+    pub move_history: Vec<MoveRecord>,
 }
 
 pub struct MatchRunner;
@@ -28,6 +29,9 @@ impl MatchRunner {
         bot1_info: &PreparedBot,
         mut game: G,
     ) -> FullMatchResult {
+
+        let mut move_history: Vec<MoveRecord> = Vec::new();
+
         let bot0 = match BotProcess::spawn(
             0,
             &bot0_info.run_dir,
@@ -41,6 +45,7 @@ impl MatchRunner {
                 result: MatchResult::Win { winner: 1, reason: format!("Không thể khởi chạy Bot 0: {}", e) },
                 bot0_peak_ram_bytes: 0,
                 bot1_peak_ram_bytes: 0,
+                move_history,
             },
         };
 
@@ -57,14 +62,17 @@ impl MatchRunner {
                 result: MatchResult::Win { winner: 0, reason: format!("Không thể khởi chạy Bot 1: {}", e) },
                 bot0_peak_ram_bytes: bot0.peak_ram_bytes,
                 bot1_peak_ram_bytes: 0,
+                move_history,
             },
         };
 
         let move_timeout = Duration::from_millis(config.timeout_per_move_ms);
         let mut bots = [bot0, bot1];
         let mut final_result = MatchResult::Draw { reason: "Hết số lượt đánh tối đa".to_string() };
+        
+        let mut move_history: Vec<MoveRecord> = Vec::new();
 
-        for _ in 0..config.max_moves {
+        for current_round in 0..config.max_moves {
             let state = game.get_current_state();
             let cur_p = state.current_player;
             let other_p = 1 - cur_p;
@@ -75,7 +83,7 @@ impl MatchRunner {
                 break;
             }
 
-            let (raw_move, _elapsed) = match bots[cur_p].get_move_fast(move_timeout) {
+            let (raw_move, elapsed) = match bots[cur_p].get_move_fast(move_timeout) {
                 Ok(res) => res,
                 Err(BotError::Timeout(d)) => {
                     final_result = MatchResult::Win { winner: other_p, reason: format!("Timeout (> {:.2?})", d) };
@@ -91,7 +99,6 @@ impl MatchRunner {
                 }
             };
 
-            // Cập nhật mức sử dụng RAM thực tế
             bots[cur_p].update_peak_memory();
 
             let move_obj: Move = match serde_json::from_str(&raw_move) {
@@ -106,6 +113,13 @@ impl MatchRunner {
                 final_result = MatchResult::Win { winner: other_p, reason: format!("Nước đi phạm luật: {:?}", move_obj) };
                 break;
             }
+
+            move_history.push(MoveRecord {
+                round: current_round,
+                player: cur_p,
+                move_obj: move_obj.clone(),
+                elapsed_ms: elapsed.as_millis(),
+            });
 
             match game.apply_move(&move_obj) {
                 MatchResult::Ongoing => continue,
@@ -124,6 +138,7 @@ impl MatchRunner {
             result: final_result,
             bot0_peak_ram_bytes: b0.peak_ram_bytes,
             bot1_peak_ram_bytes: b1.peak_ram_bytes,
+            move_history,
         }
     }
 }
