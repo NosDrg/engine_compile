@@ -11,6 +11,8 @@ pub enum Language {
 }
 
 impl Language {
+    
+    #[warn(dead_code)]
     pub fn from_str(s: &str) -> Result<Self, String> {
         match s.to_lowercase().trim() {
             "python" | "py" | "python3" => Ok(Language::Python),
@@ -22,6 +24,7 @@ impl Language {
 }
 
 pub struct PreparedBot {
+    #[allow(dead_code)]
     pub submission_id: String,
     pub run_dir: PathBuf,
     pub launch_cmd: String,

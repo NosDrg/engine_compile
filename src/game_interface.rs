@@ -1,20 +1,22 @@
 // src/game_interface.rs
 use serde::{Deserialize, Serialize};
 
+pub const BOARD_SIZE: usize = 9;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PieceType {
-    Rock,     // Búa
-    Paper,    // Bao
-    Scissors, // Kéo
+    Rock,
+    Paper,
+    Scissors,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Piece {
     pub piece_type: PieceType,
-    pub owner: usize, // 0 hoặc 1
+    pub owner: usize,
 }
 
-pub type Board9x9 = [[Option<Piece>; 9]; 9];
+pub type Board9x9 = [[Option<Piece>; BOARD_SIZE]; BOARD_SIZE];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Move {
@@ -28,8 +30,8 @@ pub struct Move {
 pub struct GameStatePayload {
     pub board: Board9x9,
     pub current_player: usize,
-    pub time_remaining_ms: u64,
     pub round: usize,
+    pub time_remaining_ms: u64,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
@@ -39,7 +41,7 @@ pub enum MatchResult {
     Ongoing,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MoveRecord {
     pub round: usize,
     pub player: usize,
@@ -48,7 +50,7 @@ pub struct MoveRecord {
 }
 
 pub trait GameLogic {
-    fn get_initial_state(&self) -> GameStatePayload;
+    fn get_initial_state(&mut self) -> GameStatePayload;
     fn is_legal_move(&self, player: usize, move_obj: &Move) -> bool;
     fn apply_move(&mut self, move_obj: &Move) -> MatchResult;
     fn get_current_state(&self) -> GameStatePayload;

@@ -22,6 +22,7 @@ pub struct FullMatchResult {
 
 pub struct MatchRunner;
 
+// Trong src/runner.rs, thay thế đoạn đầu của hàm run_match:
 impl MatchRunner {
     pub fn run_match<G: GameLogic>(
         config: MatchConfig,
@@ -29,8 +30,48 @@ impl MatchRunner {
         bot1_info: &PreparedBot,
         mut game: G,
     ) -> FullMatchResult {
-
         let mut move_history: Vec<MoveRecord> = Vec::new();
+
+        let bot0 = match BotProcess::spawn(
+            0,
+            &bot0_info.run_dir,
+            &bot0_info.launch_cmd,
+            &bot0_info.launch_args,
+            config.bot0_core,
+            config.ram_limit_mb,
+        ) {
+            Ok(b) => b,
+            Err(e) => return FullMatchResult {
+                result: MatchResult::Win { winner: 1, reason: format!("Không thể khởi chạy Bot 0: {}", e) },
+                bot0_peak_ram_bytes: 0,
+                bot1_peak_ram_bytes: 0,
+                move_history,
+            },
+        };
+
+        let bot1 = match BotProcess::spawn(
+            1,
+            &bot1_info.run_dir,
+            &bot1_info.launch_cmd,
+            &bot1_info.launch_args,
+            config.bot1_core,
+            config.ram_limit_mb,
+        ) {
+            Ok(b) => b,
+            Err(e) => return FullMatchResult {
+                result: MatchResult::Win { winner: 0, reason: format!("Không thể khởi chạy Bot 1: {}", e) },
+                bot0_peak_ram_bytes: bot0.peak_ram_bytes,
+                bot1_peak_ram_bytes: 0,
+                move_history,
+            },
+        };
+
+        let _move_timeout = Duration::from_millis(config.timeout_per_move_ms);
+        let _bots = [bot0, bot1];
+        let _final_result = MatchResult::Draw { reason: "Hết số lượt đánh tối đa".to_string() };
+
+
+        let _current_state = game.get_initial_state();
 
         let bot0 = match BotProcess::spawn(
             0,
@@ -69,15 +110,16 @@ impl MatchRunner {
         let move_timeout = Duration::from_millis(config.timeout_per_move_ms);
         let mut bots = [bot0, bot1];
         let mut final_result = MatchResult::Draw { reason: "Hết số lượt đánh tối đa".to_string() };
-        
         let mut move_history: Vec<MoveRecord> = Vec::new();
 
+        // 1. Dùng get_initial_state để dập tắt cảnh báo dead_code
+        let mut current_state = game.get_initial_state();
+
         for current_round in 0..config.max_moves {
-            let state = game.get_current_state();
-            let cur_p = state.current_player;
+            let cur_p = current_state.current_player;
             let other_p = 1 - cur_p;
 
-            let state_json = serde_json::to_string(&state).unwrap_or_default();
+            let state_json = serde_json::to_string(&current_state).unwrap_or_default();
             if let Err(_) = bots[cur_p].send_state(&state_json) {
                 final_result = MatchResult::Win { winner: other_p, reason: "Broken Pipe khi gửi dữ liệu".to_string() };
                 break;
@@ -122,7 +164,10 @@ impl MatchRunner {
             });
 
             match game.apply_move(&move_obj) {
-                MatchResult::Ongoing => continue,
+                MatchResult::Ongoing => {
+                    current_state = game.get_current_state();
+                    continue;
+                }
                 terminal => {
                     final_result = terminal;
                     break;

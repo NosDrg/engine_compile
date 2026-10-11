@@ -1,0 +1,46 @@
+/* Bổ sung vào css/style.css */
+.piece-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.piece.owner-0 {
+  background: rgba(56, 189, 248, 0.25);
+  border: 2px solid #38bdf8;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+}
+
+.piece.owner-1 {
+  background: rgba(244, 63, 94, 0.25);
+  border: 2px solid #f43f5e;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+}
+
+/* Highlight ô mục tiêu căn cứ */
+.cell.goal-p1 {
+  border: 2px dashed #f43f5e !important; /* Căn cứ A1 của Player 1 */
+}
+
+.cell.goal-p0 {
+  border: 2px dashed #38bdf8 !important; /* Căn cứ I9 của Player 0 */
+}
+
+.cell.last-from {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.cell.last-to {
+  background-color: rgba(56, 189, 248, 0.3) !important;
+}

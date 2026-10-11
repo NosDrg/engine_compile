@@ -16,10 +16,12 @@ pub enum BotError {
     Timeout(Duration),
     RuntimeCrash(String),
     BrokenPipe,
+    #[allow(dead_code)]
     IOError(String),
 }
 
 pub struct BotProcess {
+    #[allow(dead_code)]
     pub player_id: usize,
     child: Child,
     stdin: ChildStdin,

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bot Arena - Turn-based RPS Board Game</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <h1>Bot Arena: Board Game Kéo – Búa – Bao</h1>
+    <p class="subtitle">Đấu trường AI thuật toán theo lượt (Lưới 9x9)</p>
+  </header>
+
+  <main class="container">
+    <!-- Cột bên trái: Thiết lập Bot & Trận đấu -->
+    <section class="panel control-panel">
+      <h2>1. Cấu hình & Nộp Bot</h2>
+      
+      <div class="bot-setup">
+        <h3>Bot 0 (Player 0 - Xanh dương)</h3>
+        <div class="form-group">
+          <label for="bot0-id">Mã định danh (ID):</label>
+          <input type="text" id="bot0-id" value="bot_rock_01">
+        </div>
+        <div class="form-group">
+          <label for="bot0-lang">Ngôn ngữ:</label>
+          <select id="bot0-lang">
+            <option value="python">Python</option>
+            <option value="cpp">C++</option>
+            <option value="java">Java</option>
+            <option value="javascript">JavaScript</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="bot0-code">Mã nguồn:</label>
+          <textarea id="bot0-code" rows="5" placeholder="Nhập code bot 0 tại đây..."></textarea>
+        </div>
+        <button id="btn-validate-bot0" class="btn btn-secondary">Kiểm tra cú pháp Bot 0</button>
+        <div id="bot0-status" class="status-msg"></div>
+      </div>
+
+      <hr>
+
+      <div class="bot-setup">
+        <h3>Bot 1 (Player 1 - Đỏ)</h3>
+        <div class="form-group">
+          <label for="bot1-id">Mã định danh (ID):</label>
+          <input type="text" id="bot1-id" value="bot_paper_02">
+        </div>
+        <div class="form-group">
+          <label for="bot1-lang">Ngôn ngữ:</label>
+          <select id="bot1-lang">
+            <option value="python">Python</option>
+            <option value="cpp">C++</option>
+            <option value="java">Java</option>
+            <option value="javascript">JavaScript</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="bot1-code">Mã nguồn:</label>
+          <textarea id="bot1-code" rows="5" placeholder="Nhập code bot 1 tại đây..."></textarea>
+        </div>
+        <button id="btn-validate-bot1" class="btn btn-secondary">Kiểm tra cú pháp Bot 1</button>
+        <div id="bot1-status" class="status-msg"></div>
+      </div>
+
+      <hr>
+
+      <div class="match-actions">
+        <button id="btn-start-match" class="btn btn-primary">Bắt đầu trận đấu</button>
+      </div>
+    </section>
+
+    <!-- Cột bên phải: Bàn cờ & Trạng thái trận đấu -->
+    <section class="panel arena-panel">
+      <div class="match-info">
+        <div class="info-badge">Lượt (Round): <span id="display-round">0</span></div>
+        <div class="info-badge">Đến lượt: <span id="display-player">-</span></div>
+        <div class="info-badge">Thời gian/nước: <span id="display-time">1000ms</span></div>
+      </div>
+
+      <div id="board-container" class="board-container">
+        <!-- Lưới 9x9 sẽ được board.js sinh ra tại đây -->
+      </div>
+
+      <div class="legend">
+        <span><b class="p0-dot">●</b> Player 0: ✊ Búa | ✋ Bao | ✌️ Kéo</span>
+        <span><b class="p1-dot">●</b> Player 1: ✊ Búa | ✋ Bao | ✌️ Kéo</span>
+      </div>
+
+      <div id="match-result" class="result-box hidden">
+        <h3 id="result-title">Kết quả trận đấu</h3>
+        <p id="result-desc"></p>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
