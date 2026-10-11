@@ -14,14 +14,16 @@
 
   <main class="container">
     <!-- Cột bên trái: Thiết lập Bot & Trận đấu -->
+    <!-- Cập nhật đoạn Bot Setup và Arena trong frontend/index.html -->
+    <!-- Cột bên trái: Thiết lập Bot -->
     <section class="panel control-panel">
-      <h2>1. Cấu hình & Nộp Bot</h2>
+      <h2>Cấu hình & Nộp Bot</h2>
       
-      <div class="bot-setup">
+      <div class="bot-setup p0">
         <h3>Bot 0 (Player 0 - Xanh dương)</h3>
         <div class="form-group">
           <label for="bot0-id">Mã định danh (ID):</label>
-          <input type="text" id="bot0-id" value="bot_rock_01">
+          <input type="text" id="bot0-id" value="bot_blue_01">
         </div>
         <div class="form-group">
           <label for="bot0-lang">Ngôn ngữ:</label>
@@ -29,24 +31,21 @@
             <option value="python">Python</option>
             <option value="cpp">C++</option>
             <option value="java">Java</option>
-            <option value="javascript">JavaScript</option>
           </select>
         </div>
         <div class="form-group">
           <label for="bot0-code">Mã nguồn:</label>
-          <textarea id="bot0-code" rows="5" placeholder="Nhập code bot 0 tại đây..."></textarea>
+          <textarea id="bot0-code" rows="5" placeholder="def get_move(state): ..."></textarea>
         </div>
         <button id="btn-validate-bot0" class="btn btn-secondary">Kiểm tra cú pháp Bot 0</button>
         <div id="bot0-status" class="status-msg"></div>
       </div>
 
-      <hr>
-
-      <div class="bot-setup">
+      <div class="bot-setup p1">
         <h3>Bot 1 (Player 1 - Đỏ)</h3>
         <div class="form-group">
           <label for="bot1-id">Mã định danh (ID):</label>
-          <input type="text" id="bot1-id" value="bot_paper_02">
+          <input type="text" id="bot1-id" value="bot_red_02">
         </div>
         <div class="form-group">
           <label for="bot1-lang">Ngôn ngữ:</label>
@@ -54,39 +53,39 @@
             <option value="python">Python</option>
             <option value="cpp">C++</option>
             <option value="java">Java</option>
-            <option value="javascript">JavaScript</option>
           </select>
         </div>
         <div class="form-group">
           <label for="bot1-code">Mã nguồn:</label>
-          <textarea id="bot1-code" rows="5" placeholder="Nhập code bot 1 tại đây..."></textarea>
+          <textarea id="bot1-code" rows="5" placeholder="def get_move(state): ..."></textarea>
         </div>
         <button id="btn-validate-bot1" class="btn btn-secondary">Kiểm tra cú pháp Bot 1</button>
         <div id="bot1-status" class="status-msg"></div>
       </div>
 
-      <hr>
-
-      <div class="match-actions">
+      <div class="match-actions" style="margin-top: 14px;">
         <button id="btn-start-match" class="btn btn-primary">Bắt đầu trận đấu</button>
       </div>
     </section>
 
-    <!-- Cột bên phải: Bàn cờ & Trạng thái trận đấu -->
+    <!-- Cột bên phải: Bàn cờ -->
     <section class="panel arena-panel">
       <div class="match-info">
-        <div class="info-badge">Lượt (Round): <span id="display-round">0</span></div>
-        <div class="info-badge">Đến lượt: <span id="display-player">-</span></div>
-        <div class="info-badge">Thời gian/nước: <span id="display-time">1000ms</span></div>
+        <div class="info-badge">Lượt (Round)<span id="display-round">0</span></div>
+        <div class="info-badge">Đến lượt<span id="display-player">-</span></div>
+        <div class="info-badge">Thời gian xử lý<span id="display-time">0ms</span></div>
       </div>
 
-      <div id="board-container" class="board-container">
-        <!-- Lưới 9x9 sẽ được board.js sinh ra tại đây -->
+      <div class="board-wrapper">
+        <div id="board-container" class="board-container">
+          <!-- Lưới 9x9 sinh ra tại đây -->
+        </div>
       </div>
 
       <div class="legend">
-        <span><b class="p0-dot">●</b> Player 0: ✊ Búa | ✋ Bao | ✌️ Kéo</span>
-        <span><b class="p1-dot">●</b> Player 1: ✊ Búa | ✋ Bao | ✌️ Kéo</span>
+        <span><b class="p0-dot">●</b> Player 0 (Xanh)</span>
+        <span><b class="p1-dot">●</b> Player 1 (Đỏ)</span>
+        <span>Mục tiêu: Chiếm <b>A1/I9</b> hoặc diệt hết 1 loại quân</span>
       </div>
 
       <div id="match-result" class="result-box hidden">
