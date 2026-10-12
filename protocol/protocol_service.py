@@ -1,19 +1,19 @@
-# protocol_service.py
+# protocol/protocol_service.py
 import os
 import threading
 import uuid
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 from database import DatabaseManager
 from engine_adapter import RustEngineAdapter, BASE_DIR
 
+
 class ProtocolService:
     def __init__(self, 
-                 engine_bin: str = None,  # type: ignore
-                 db_path: str = None): # type: ignore
+                 engine_bin: Optional[str] = None,
+                 db_path: Optional[str] = None):
         actual_db = db_path if db_path else os.path.join(os.path.dirname(__file__), "match_arena.db")
         self.db = DatabaseManager(db_path=actual_db)
-        
-        self.engine = RustEngineAdapter(engine_bin=engine_bin)
+        self.engine = RustEngineAdapter(engine_bin=engine_bin) # type: ignore
 
     def submit_code(self, username: str, language: str, source_code: str) -> Dict[str, Any]:
         """
@@ -43,6 +43,63 @@ class ProtocolService:
                 "error": err_msg
             }
 
+    def get_all_opponents(self, exclude_username: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Lấy danh sách các thí sinh đã có bài nộp hợp lệ trong cơ sở dữ liệu."""
+        query = """
+            SELECT u.username, s.id, s.language, s.created_at
+            FROM submissions s
+            JOIN users u ON s.user_id = u.id
+            WHERE s.status = 'VALID'
+            GROUP BY u.id
+            ORDER BY s.created_at DESC
+        """
+        with self.db._get_connection() as conn:
+            cursor = conn.cursor()
+            rows = cursor.execute(query).fetchall()
+
+        opponents = []
+        for r in rows:
+            uname = r["username"]
+            sub_id = r["id"]
+            lang = r["language"]
+            if exclude_username and uname == exclude_username:
+                continue
+            opponents.append({
+                "username": uname,
+                "sub_id": sub_id,
+                "language": lang
+            })
+        return opponents
+
+    def get_match_replay(self, match_id: str) -> Dict[str, Any]:
+        """Lấy thông tin replay và số liệu trận đấu theo ID."""
+        match_info = self.db.get_match_by_id(match_id)
+        if not match_info:
+            return {"success": False, "error": f"Không tìm thấy ván đấu {match_id}"}
+        
+        return {
+            "success": True,
+            "match_id": match_info["id"],
+            "summary": {
+                "winner_name": match_info["winner_name"] or "Hòa",
+                "reason": match_info["reason"],
+                "created_at": match_info["created_at"]
+            },
+            "metrics": {
+                "player_0": {
+                    "username": match_info["user0_name"],
+                    "language": match_info["user0_lang"],
+                    "peak_ram_mb": match_info["bot0_ram_mb"]
+                },
+                "player_1": {
+                    "username": match_info["user1_name"],
+                    "language": match_info["user1_lang"],
+                    "peak_ram_mb": match_info["bot1_ram_mb"]
+                }
+            },
+            "replay": match_info["replay_data"]
+        }
+
     def start_match(self, username0: str, username1: str, core0: int = 0, core1: int = 1) -> Dict[str, Any]:
         user0_id = self.db.get_or_create_user(username0)
         user1_id = self.db.get_or_create_user(username1)
@@ -63,6 +120,7 @@ class ProtocolService:
                 "success": True,
                 "summary": {"winner_name": "Hòa", "winner_slot": None, "reason": "Cả hai bot đều lỗi biên dịch / cú pháp"},
                 "metrics": {},
+                "initial_board": None,
                 "replay": []
             }
         if not val0.get("success"):
@@ -70,6 +128,7 @@ class ProtocolService:
                 "success": True,
                 "summary": {"winner_name": username1, "winner_slot": 1, "reason": f"Bot của {username0} lỗi biên dịch: {val0.get('error')}"},
                 "metrics": {},
+                "initial_board": None,
                 "replay": []
             }
         if not val1.get("success"):
@@ -77,9 +136,9 @@ class ProtocolService:
                 "success": True,
                 "summary": {"winner_name": username0, "winner_slot": 0, "reason": f"Bot của {username1} lỗi biên dịch: {val1.get('error')}"},
                 "metrics": {},
+                "initial_board": None,
                 "replay": []
             }
-        # -----------------------------------------------------------------
 
         duel_sub0_id = f"{user0_id}_{sub0['id']}_{sub0['code_hash'][:6]}"
         duel_sub1_id = f"{user1_id}_{sub1['id']}_{sub1['code_hash'][:6]}"
@@ -93,9 +152,8 @@ class ProtocolService:
             return {"success": False, "error": engine_response.get("error")}
 
         match_data = engine_response["data"]
-        raw_winner = match_data["winner_id"] # 0, 1 hoặc None
+        raw_winner = match_data["winner_id"]
 
-        # Xác định ID người thắng
         winner_user_id = None
         winner_name = "Hòa"
         if raw_winner == 0:
@@ -107,7 +165,25 @@ class ProtocolService:
 
         match_id = f"match_{uuid.uuid4().hex[:12]}"
 
-        # Lưu ván đấu vào SQLite
+        # Thiết lập initial_board chuẩn 9x9
+        initial_board = match_data.get("initial_board")
+        if not initial_board:
+            initial_board = [[None for _ in range(9)] for _ in range(9)]
+            p0_pieces = [
+                {"piece_type": "Rock", "owner": 0}, {"piece_type": "Rock", "owner": 0}, {"piece_type": "Rock", "owner": 0},
+                {"piece_type": "Paper", "owner": 0}, {"piece_type": "Paper", "owner": 0}, {"piece_type": "Paper", "owner": 0},
+                {"piece_type": "Scissors", "owner": 0}, {"piece_type": "Scissors", "owner": 0}, {"piece_type": "Scissors", "owner": 0}
+            ]
+            p0_coords = [
+                (1, 0), (2, 0), (3, 0),
+                (0, 1), (1, 1), (2, 1),
+                (0, 2), (1, 2), (2, 2)
+            ]
+            for i, (x, y) in enumerate(p0_coords):
+                piece = p0_pieces[i]
+                initial_board[y][x] = piece # type: ignore
+                initial_board[8 - y][8 - x] = {"piece_type": piece["piece_type"], "owner": 1} # type: ignore
+
         self.db.save_match(
             match_id=match_id,
             user0_id=user0_id,
@@ -121,10 +197,10 @@ class ProtocolService:
             replay_data=match_data["move_history"]
         )
 
-        # Định dạng chuẩn hóa hoàn chỉnh cho Frontend
         return {
             "success": True,
             "match_id": match_id,
+            "initial_board": initial_board,
             "summary": {
                 "winner_name": winner_name,
                 "winner_slot": raw_winner,
@@ -147,66 +223,8 @@ class ProtocolService:
         }
 
 
-# --- KỊCH BẢN CHẠY THỬ NGHIỆM ---
-if __name__ == "__main__":
-    service = ProtocolService()
-
-    # Thí sinh 1 nộp code Python
-    py_code = """
-def get_move(state):
-    return {"from_x": 0, "from_y": 0, "to_x": 0, "to_y": 1}
-"""
-    print("1. Nộp bài thí sinh 1:")
-    res1 = service.submit_code("nguyenvana", "python", py_code)
-    print(res1)
-
-    # Thí sinh 2 nộp code C++
-    cpp_code = """
-#include <nlohmann/json.hpp>
-using json = nlohmann::json;
-
-json get_move(const json& state) {
-    return {{"from_x", 8, {"from_y", 8}, {"to_x", 8}, {"to_y", 7}};
-}
-"""
-    print("\n2. Nộp bài thí sinh 2:")
-    res2 = service.submit_code("tranthib", "cpp", cpp_code)
-    print(res2)
-
-    # Tổ chức thi đấu
-    print("\n3. Bắt đầu trận đấu:")
-    match_result = service.start_match("nguyenvana", "tranthib", core0=0, core1=1)
-    
-    # In dữ liệu trả về cho Frontend
-    import pprint
-    pprint.pprint(match_result)
-
-
-    # Thêm vào ProtocolService trong protocol/protocol_service.py
-    def get_match_replay(self, match_id: str) -> Dict[str, Any]:
-        match_info = self.db.get_match_by_id(match_id)
-        if not match_info:
-            return {"success": False, "error": "Không tìm thấy trận đấu"}
-        
-        return {
-            "success": True,
-            "match_id": match_info["id"],
-            "summary": {
-                "winner_name": match_info["winner_name"] or "Hòa",
-                "reason": match_info["reason"],
-                "created_at": match_info["created_at"]
-            },
-            "metrics": {
-                "player_0": {"username": match_info["user0_name"], "language": match_info["user0_lang"], "peak_ram_mb": match_info["bot0_ram_mb"]},
-                "player_1": {"username": match_info["user1_name"], "language": match_info["user1_lang"], "peak_ram_mb": match_info["bot1_ram_mb"]}
-            },
-            "replay": match_info["replay_data"]
-        }
-
-
 class CoreAllocator:
     def __init__(self):
-        # Lấy số core CPU khả dụng trên máy (trừ core 0 cho hệ thống nếu muốn)
         total_cores = os.cpu_count() or 4
         self.available_cores = list(range(total_cores))
         self.lock = threading.Lock()
@@ -215,12 +233,9 @@ class CoreAllocator:
         with self.lock:
             if len(self.available_cores) >= 2:
                 return self.available_cores.pop(0), self.available_cores.pop(0)
-            # Nếu hết core thì fallback chia sẻ core 0, 1
             return 0, 1
 
     def release_pair(self, c1: int, c2: int):
         with self.lock:
             if c1 not in self.available_cores: self.available_cores.append(c1)
             if c2 not in self.available_cores: self.available_cores.append(c2)
-
-    

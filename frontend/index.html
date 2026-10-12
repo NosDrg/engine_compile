@@ -17,54 +17,48 @@
     <!-- Cập nhật đoạn Bot Setup và Arena trong frontend/index.html -->
     <!-- Cột bên trái: Thiết lập Bot -->
     <section class="panel control-panel">
-      <h2>Cấu hình & Nộp Bot</h2>
-      
-      <div class="bot-setup p0">
-        <h3>Bot 0 (Player 0 - Xanh dương)</h3>
-        <div class="form-group">
-          <label for="bot0-id">Mã định danh (ID):</label>
-          <input type="text" id="bot0-id" value="bot_blue_01">
-        </div>
-        <div class="form-group">
-          <label for="bot0-lang">Ngôn ngữ:</label>
-          <select id="bot0-lang">
-            <option value="python">Python</option>
-            <option value="cpp">C++</option>
-            <option value="java">Java</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="bot0-code">Mã nguồn:</label>
-          <textarea id="bot0-code" rows="5" placeholder="def get_move(state): ..."></textarea>
-        </div>
-        <button id="btn-validate-bot0" class="btn btn-secondary">Kiểm tra cú pháp Bot 0</button>
-        <div id="bot0-status" class="status-msg"></div>
-      </div>
+      <h2>1. Bài Nộp Của Bạn (Bot 0)</h2>
+        <div class="bot-setup p0">
+          <div class="form-group">
+            <label for="my-bot-id">Tên thí sinh (Username):</label>
+            <input type="text" id="my-bot-id" placeholder="nhập_tên_của_bạn" value="ThiSinh_A">
+          </div>
+          <div class="form-group">
+            <label for="my-bot-lang">Ngôn ngữ lập trình:</label>
+            <select id="my-bot-lang">
+              <option value="python">Python</option>
+              <option value="cpp">C++</option>
+              <option value="java">Java</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="my-bot-code">Mã nguồn thuật toán:</label>
+            <textarea id="my-bot-code" rows="7" placeholder="def get_move(state): ..."></textarea>
+          </div>
 
+          <!-- Hàng nút hành động: Kiểm tra & Nộp bài -->
+          <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <button id="btn-validate-my-bot" class="btn btn-secondary" style="flex: 1;">Kiểm tra code</button>
+            <button id="btn-submit-my-bot" class="btn btn-secondary" style="flex: 1;">Nộp & Lưu Bot</button>
+          </div>
+          <div id="my-bot-status" class="status-msg"></div>
+        </div>
+
+      <hr style="border: none; border-top: 1px solid var(--border-card); margin: 16px 0;">
+
+      <h2>2. Chọn Đối Thủ Từ Hệ Thống (Bot 1)</h2>
       <div class="bot-setup p1">
-        <h3>Bot 1 (Player 1 - Đỏ)</h3>
         <div class="form-group">
-          <label for="bot1-id">Mã định danh (ID):</label>
-          <input type="text" id="bot1-id" value="bot_red_02">
-        </div>
-        <div class="form-group">
-          <label for="bot1-lang">Ngôn ngữ:</label>
-          <select id="bot1-lang">
-            <option value="python">Python</option>
-            <option value="cpp">C++</option>
-            <option value="java">Java</option>
+          <label for="select-opponent">Danh sách thí sinh có sẵn:</label>
+          <select id="select-opponent">
+            <option value="">-- Đang tải danh sách thí sinh... --</option>
           </select>
         </div>
-        <div class="form-group">
-          <label for="bot1-code">Mã nguồn:</label>
-          <textarea id="bot1-code" rows="5" placeholder="def get_move(state): ..."></textarea>
-        </div>
-        <button id="btn-validate-bot1" class="btn btn-secondary">Kiểm tra cú pháp Bot 1</button>
-        <div id="bot1-status" class="status-msg"></div>
+        <button id="btn-refresh-opponents" class="btn btn-secondary" style="margin-bottom: 8px;">Làm mới danh sách đối thủ</button>
       </div>
 
-      <div class="match-actions" style="margin-top: 14px;">
-        <button id="btn-start-match" class="btn btn-primary">Bắt đầu trận đấu</button>
+      <div class="match-actions" style="margin-top: 16px;">
+        <button id="btn-start-match" class="btn btn-primary">Bắt Đầu Thách Đấu</button>
       </div>
     </section>
 

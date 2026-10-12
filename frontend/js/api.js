@@ -1,4 +1,4 @@
-// js/api.js
+// frontend/js/api.js
 const API_BASE_URL = '/api';
 
 export const api = {
@@ -18,11 +18,30 @@ export const api = {
       });
       const data = await response.json();
       if (!response.ok) {
-        return { success: false, message: data.detail || 'Lỗi cú pháp' };
+        return { success: false, message: data.detail || data.error || 'Lỗi cú pháp' };
       }
-      return { success: true, message: data.message };
+      return { success: true, message: data.message || 'Mã nguồn hợp lệ!' };
     } catch (err) {
       return { success: false, message: `Lỗi kết nối Server: ${err.message}` };
+    }
+  },
+
+  /**
+   * Lấy danh sách đối thủ từ cơ sở dữ liệu
+   */
+  async getOpponents(excludeUser = '') {
+    try {
+      const url = excludeUser
+        ? `${API_BASE_URL}/opponents?exclude=${encodeURIComponent(excludeUser)}`
+        : `${API_BASE_URL}/opponents`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (!response.ok) {
+        return { success: false, opponents: [] };
+      }
+      return data;
+    } catch (err) {
+      return { success: false, opponents: [] };
     }
   },
 
@@ -41,7 +60,7 @@ export const api = {
       });
       const data = await response.json();
       if (!response.ok) {
-        return { success: false, message: data.detail || 'Không thể tạo trận đấu' };
+        return { success: false, message: data.detail || data.error || 'Không thể tạo trận đấu' };
       }
       return data;
     } catch (err) {

@@ -1,4 +1,4 @@
-// js/match.js
+// frontend/js/match.js
 import { api } from './api.js';
 
 export class MatchController {
@@ -13,64 +13,68 @@ export class MatchController {
     this.resultTitle = document.getElementById('result-title');
     this.resultDesc = document.getElementById('result-desc');
 
-    this.winAudio = new Audio('assets/icons/winners.mp3');
+    this.winAudio = new Audio('assets/winners.mp3');
   }
 
   async start(bot0, bot1) {
     this.resultBox.classList.add('hidden');
     this.stopPlayback();
+    this.boardView.clearPieces(); // Giữ nguyên các khối block, chỉ dọn sạch quân cũ
 
-    // 1. Gửi lệnh chạy trận đấu
+    // Gọi API Duel
     const res = await api.createMatch(bot0.sub_id, bot1.sub_id);
-    if (!res.success) {
-      alert(`Không thể tổ chức trận đấu: ${res.message || res.detail || 'Lỗi không xác định'}`);
+    console.log("Dữ liệu trận đấu trả về từ Server:", res);
+
+    if (!res || !res.success) {
+      alert(`Không thể tổ chức trận đấu: ${res?.message || res?.detail || 'Lỗi không xác định'}`);
       return;
     }
 
     const replayList = res.replay || [];
-    
-    // Nếu cả 2 không có nước đi nào (vd lỗi biên dịch)
+    // Nếu backend chưa gửi initial_board, dùng hàm sinh bàn cờ chuẩn luật[cite: 13]
+    const initialBoard = res.initial_board || res.board || this.generateStandardInitialBoard(replayList);
+
+    // Vẽ ngay lập tức quân cờ lúc bắt đầu trận
+    this.boardView.render(initialBoard);
+
     if (replayList.length === 0) {
       this.showResult(res.summary?.winner_slot, res.summary?.reason);
       return;
     }
 
-    // 2. Tái hiện lại từng nước đi trên bàn cờ
-    this.playReplay(replayList, res.summary);
+    // Chạy Replay từng bước
+    this.playReplay(initialBoard, replayList, res.summary);
   }
 
-  playReplay(replayList, summary) {
+  playReplay(initialBoard, replayList, summary) {
     let step = 0;
-    
-    // Tạo bàn cờ mô phỏng ban đầu
-    let boardState = this.createInitialBoardState();
-    this.boardView.render(boardState);
+    let boardState = JSON.parse(JSON.stringify(initialBoard));
 
     this.playbackInterval = setInterval(() => {
       if (step >= replayList.length) {
         this.stopPlayback();
-        this.showResult(summary.winner_slot, summary.reason);
+        this.showResult(summary?.winner_slot, summary?.reason);
         return;
       }
 
       const moveRecord = replayList[step];
       const m = moveRecord.move_obj;
 
-      // Cập nhật vị trí quân cờ
-      const movingPiece = boardState[m.from_y][m.from_x];
-      boardState[m.from_y][m.from_x] = null;
-      boardState[m.to_y][m.to_x] = movingPiece;
+      if (boardState[m.from_y] && boardState[m.from_y][m.from_x]) {
+        const movingPiece = boardState[m.from_y][m.from_x];
+        boardState[m.from_y][m.from_x] = null;
+        boardState[m.to_y][m.to_x] = movingPiece;
+      }
 
-      // Hiển thị thông số
       this.roundEl.textContent = moveRecord.round;
       this.playerEl.textContent = moveRecord.player === 0 ? 'Player 0 (Xanh dương)' : 'Player 1 (Đỏ)';
-      this.timeEl.textContent = `${moveRecord.elapsed_ms}ms`;
+      this.timeEl.textContent = `${moveRecord.elapsed_ms || 0}ms`;
 
-      // Render lại bàn cờ với highlight
+      // Cập nhật bàn cờ và vẽ highlight nước đi
       this.boardView.render(boardState, m);
 
       step++;
-    }, 450); // Phát mỗi nước cách nhau 450ms
+    }, 450);
   }
 
   stopPlayback() {
@@ -80,13 +84,25 @@ export class MatchController {
     }
   }
 
-  createInitialBoardState() {
-    // Tạo lưới ma trận trống 9x9
-    const grid = [];
-    for (let y = 0; y < 9; y++) {
-      grid.push(new Array(9).fill(null));
+  /**
+   * Tạo bàn cờ ban đầu chuẩn 9 quân mỗi bên nếu backend không trả về initial_board
+   */
+  generateStandardInitialBoard(replayList) {
+    const b = Array.from({ length: 9 }, () => Array(9).fill(null));
+    const types = ['Rock', 'Paper', 'Scissors', 'Rock', 'Paper', 'Scissors', 'Rock', 'Paper', 'Scissors'];
+    const p0_pos = [
+      [0,1], [0,2], [0,3],
+      [1,0], [1,1], [1,2],
+      [2,0], [2,1], [2,2]
+    ];
+
+    for (let i = 0; i < 9; i++) {
+      const [y, x] = p0_pos[i];
+      b[y][x] = { piece_type: types[i], owner: 0 };
+      // Đối xứng gương cho Player 1
+      b[8 - y][8 - x] = { piece_type: types[i], owner: 1 };
     }
-    return grid;
+    return b;
   }
 
   showResult(winnerSlot, reason) {
@@ -98,7 +114,6 @@ export class MatchController {
     this.resultTitle.textContent = `Người thắng: ${winnerText}`;
     this.resultDesc.textContent = `Lý do: ${reason}`;
 
-    // Phát âm thanh chiến thắng
     this.winAudio.play().catch(() => {});
   }
 }

@@ -1,16 +1,16 @@
 # protocol/app.py
 import os
 import threading
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, RedirectResponse
+from typing import Optional
+from fastapi import FastAPI, HTTPException # type: ignore
+from fastapi.middleware.cors import CORSMiddleware # type: ignore
+from fastapi.staticfiles import StaticFiles # type: ignore
+from fastapi.responses import FileResponse, RedirectResponse # type: ignore
 from pydantic import BaseModel
 from protocol_service import ProtocolService
 
 app = FastAPI(title="Match Arena API")
 
-# Cấu hình CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,7 +21,6 @@ app.add_middleware(
 
 service = ProtocolService()
 
-# Bộ điều phối Core CPU
 class CoreManager:
     def __init__(self):
         total_cores = os.cpu_count() or 4
@@ -41,7 +40,6 @@ class CoreManager:
 
 core_mgr = CoreManager()
 
-# Data models
 class SubmitReq(BaseModel):
     username: str
     language: str
@@ -51,7 +49,7 @@ class MatchReq(BaseModel):
     user0: str
     user1: str
 
-# ----------------- TÌM ĐƯỜNG DẪN FRONTEND & MOUNT STATIC -----------------
+# Mount static frontend
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, ".."))
 
@@ -73,8 +71,6 @@ def get_ui():
     if os.path.exists(index_file):
         return FileResponse(index_file)
     return RedirectResponse(url="/docs")
-
-# ----------------- CÁC ENDPOINT API CẦN THIẾT -----------------
 
 @app.post("/api/submit")
 def submit_code(req: SubmitReq):
@@ -98,5 +94,10 @@ def run_duel(req: MatchReq):
 def get_match(match_id: str):
     result = service.get_match_replay(match_id)
     if not result.get("success"):
-        raise HTTPException(status_code=404, detail=result.get("error"))
+        raise HTTPException(status_code=404, detail=str(result.get("error", "Not found")))
     return result
+
+@app.get("/api/opponents")
+def get_opponents(exclude: Optional[str] = None):
+    opponents = service.get_all_opponents(exclude_username=exclude)
+    return {"success": True, "opponents": opponents}
