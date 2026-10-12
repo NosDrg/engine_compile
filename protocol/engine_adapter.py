@@ -89,14 +89,29 @@ class RustEngineAdapter:
             ]
 
             process = subprocess.run(cmd, capture_output=True, text=True)
-            try:
-                data = json.loads(process.stdout.strip())
-                return data
-            except json.JSONDecodeError:
-                return {
-                    "success": False,
-                    "error": f"Engine Crash: {process.stderr.strip() or process.stdout.strip()}"
-                }
+            stdout_text = process.stdout.strip()
+
+            # Quét từng dòng từ dưới lên để tìm đúng dòng JSON kết quả hợp lệ
+            parsed_data = None
+            for line in reversed(stdout_text.splitlines()):
+                line = line.strip()
+                if line.startswith("{") and line.endswith("}"):
+                    try:
+                        data = json.loads(line)
+                        if "success" in data or "data" in data:
+                            parsed_data = data
+                            break
+                    except json.JSONDecodeError:
+                        continue
+
+            if parsed_data is not None:
+                return parsed_data
+
+            # Nếu không tìm thấy dòng JSON hợp lệ nào
+            return {
+                "success": False,
+                "error": f"Engine Crash: {process.stderr.strip() or stdout_text}"
+            }
         finally:
             if os.path.exists(file0): os.remove(file0)
             if os.path.exists(file1): os.remove(file1)

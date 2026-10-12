@@ -246,13 +246,16 @@ textarea {
   transition: filter 0.15s ease;
 }
 
-/* Ảnh nền ô xen kẽ */
 .cell.cell-light {
-  background-image: url('/assets/block1.jpg');
+  background-image: url('/assets/block1.jpg'), url('../assets/block1.jpg');
+  background-size: cover;
+  background-position: center;
 }
 
 .cell.cell-dark {
-  background-image: url('/assets/block2.jpg');
+  background-image: url('/assets/block2.jpg'), url('../assets/block2.jpg');
+  background-size: cover;
+  background-position: center;
 }
 
 /* Đánh dấu ô căn cứ A1 & I9 */

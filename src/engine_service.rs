@@ -12,6 +12,7 @@ pub struct MatchOutcome {
     pub bot0_peak_ram_mb: f64,
     pub bot1_peak_ram_mb: f64,
     pub move_history: Vec<MoveRecord>,
+    pub initial_board: crate::game_interface::Board9x9,
 }
 
 pub struct EngineService {
@@ -49,7 +50,7 @@ impl EngineService {
         bot1_id: &str,
         bot1_code: &str,
         bot1_lang: &str,
-        game: G,
+        mut game: G,
         bot0_core: usize,
         bot1_core: usize,
     ) -> Result<MatchOutcome, String> {
@@ -66,6 +67,7 @@ impl EngineService {
                 bot0_peak_ram_mb: 0.0,
                 bot1_peak_ram_mb: 0.0,
                 move_history: Vec::new(),
+                initial_board: game.get_initial_state().board,
             });
         }
 
@@ -76,6 +78,7 @@ impl EngineService {
                 bot0_peak_ram_mb: 0.0,
                 bot1_peak_ram_mb: 0.0,
                 move_history: Vec::new(),
+                initial_board: game.get_initial_state().board,
             });
         }
 
@@ -86,6 +89,7 @@ impl EngineService {
                 bot0_peak_ram_mb: 0.0,
                 bot1_peak_ram_mb: 0.0,
                 move_history: Vec::new(),
+                initial_board: game.get_initial_state().board,
             });
         }
 
@@ -118,6 +122,7 @@ impl EngineService {
             bot0_peak_ram_mb: (outcome.bot0_peak_ram_bytes as f64) / (1024.0 * 1024.0),
             bot1_peak_ram_mb: (outcome.bot1_peak_ram_bytes as f64) / (1024.0 * 1024.0),
             move_history: outcome.move_history,
+            initial_board: outcome.initial_board,
         })
     }
 }

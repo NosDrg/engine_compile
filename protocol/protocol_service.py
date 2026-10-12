@@ -154,6 +154,8 @@ class ProtocolService:
         match_data = engine_response["data"]
         raw_winner = match_data["winner_id"]
 
+        initial_board = match_data.get("initial_board")
+
         winner_user_id = None
         winner_name = "Hòa"
         if raw_winner == 0:
@@ -165,37 +167,30 @@ class ProtocolService:
 
         match_id = f"match_{uuid.uuid4().hex[:12]}"
 
-        # Thiết lập initial_board chuẩn 9x9
-        initial_board = match_data.get("initial_board")
-        if not initial_board:
-            initial_board = [[None for _ in range(9)] for _ in range(9)]
-            p0_pieces = [
-                {"piece_type": "Rock", "owner": 0}, {"piece_type": "Rock", "owner": 0}, {"piece_type": "Rock", "owner": 0},
-                {"piece_type": "Paper", "owner": 0}, {"piece_type": "Paper", "owner": 0}, {"piece_type": "Paper", "owner": 0},
-                {"piece_type": "Scissors", "owner": 0}, {"piece_type": "Scissors", "owner": 0}, {"piece_type": "Scissors", "owner": 0}
-            ]
-            p0_coords = [
-                (1, 0), (2, 0), (3, 0),
-                (0, 1), (1, 1), (2, 1),
-                (0, 2), (1, 2), (2, 2)
-            ]
-            for i, (x, y) in enumerate(p0_coords):
-                piece = p0_pieces[i]
-                initial_board[y][x] = piece # type: ignore
-                initial_board[8 - y][8 - x] = {"piece_type": piece["piece_type"], "owner": 1} # type: ignore
-
-        self.db.save_match(
-            match_id=match_id,
-            user0_id=user0_id,
-            sub0_id=sub0["id"],
-            user1_id=user1_id,
-            sub1_id=sub1["id"],
-            winner_user_id=winner_user_id,
-            reason=match_data["reason"],
-            bot0_ram=match_data["bot0_peak_ram_mb"],
-            bot1_ram=match_data["bot1_peak_ram_mb"],
-            replay_data=match_data["move_history"]
-        )
+        return {
+            "success": True,
+            "match_id": match_id,
+            "initial_board": initial_board,
+            "summary": {
+                "winner_name": winner_name,
+                "winner_slot": raw_winner,
+                "reason": match_data["reason"],
+                "total_rounds": len(match_data["move_history"]),
+            },
+            "metrics": {
+                "player_0": {
+                    "username": username0,
+                    "language": sub0["language"],
+                    "peak_ram_mb": match_data["bot0_peak_ram_mb"],
+                },
+                "player_1": {
+                    "username": username1,
+                    "language": sub1["language"],
+                    "peak_ram_mb": match_data["bot1_peak_ram_mb"],
+                }
+            },
+            "replay": match_data["move_history"]
+        }
 
         return {
             "success": True,
