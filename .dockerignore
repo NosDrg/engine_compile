@@ -1,0 +1,23 @@
+# Bỏ qua môi trường ảo Python
+**/.venv
+**/venv
+**/env
+**/__pycache__
+**/*.pyc
+
+# Bỏ qua thư mục build Rust cục bộ
+target/
+**/target/
+
+# Bỏ qua file database SQLite và dữ liệu tạm
+protocol/*.db
+protocol/*.db-journal
+workspace/
+**/workspace/
+
+# Bỏ qua Git và file hệ thống Windows/IDE
+.git
+.gitignore
+.idea
+.vscode
+*.tar
