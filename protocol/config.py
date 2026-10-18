@@ -1,19 +1,17 @@
-# protocol/config.py
 import os
+from pathlib import Path
 
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, ".."))
+# Thư mục protocol/
+PROTOCOL_DIR = Path(__file__).resolve().parent
 
-# Thư mục chứa Binary Rust Engine
-DEFAULT_ENGINE_BIN = os.path.join(PROJECT_ROOT, "target", "release", "match_runner_engine")
-DEFAULT_WORKSPACE_DIR = os.path.join(PROJECT_ROOT, "workspace")
-DEFAULT_DRIVERS_DIR = os.path.join(PROJECT_ROOT, "drivers")
-DEFAULT_DB_PATH = os.path.join(CURRENT_DIR, "save/match_arena.db")
+# Thư mục gốc project (/app hoặc repo root)
+ROOT_DIR = PROTOCOL_DIR.parent
 
-# Thư mục Frontend
-if os.path.isdir(os.path.join(PROJECT_ROOT, "frontend")):
-    FRONTEND_DIR = os.path.join(PROJECT_ROOT, "frontend")
-elif os.path.isdir(os.path.join(CURRENT_DIR, "frontend")):
-    FRONTEND_DIR = os.path.join(CURRENT_DIR, "frontend")
-else:
-    FRONTEND_DIR = os.path.join(PROJECT_ROOT, "frontend")
+# Đường dẫn database tuyệt đối nằm ngay trong protocol/
+DEFAULT_DB_PATH = str(PROTOCOL_DIR / "save" / "match_arena.db")
+
+# Đường dẫn thư mục frontend
+FRONTEND_DIR = str(ROOT_DIR / "frontend")
+
+# Thư mục sandbox cho engine
+WORKSPACE_DIR = str(ROOT_DIR / "workspace")

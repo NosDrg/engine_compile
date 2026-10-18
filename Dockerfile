@@ -18,7 +18,7 @@ COPY Cargo.toml Cargo.lock ./
 COPY src/ ./src/
 
 # Biên dịch binary release
-RUN cargo build --release
+RUN cargo build --release -j 1
 
 # ==========================================
 # GIAI ĐOẠN 2: Môi trường chạy FastAPI & Sandbox
@@ -47,8 +47,9 @@ COPY --from=builder /usr/src/engine/target/release/match_runner_engine /app/targ
 RUN chmod +x /app/target/release/match_runner_engine
 
 # Tạo các thư mục cần thiết
-RUN mkdir -p /app/workspace /app/drivers /app/frontend
-
+RUN mkdir -p /app/workspace /app/drivers /app/frontend /app/protocol/save && \
+    chmod -R 777 /app/workspace /app/protocol
+    
 # Copy mã nguồn backend, frontend và drivers
 COPY protocol/ /app/protocol/
 COPY frontend/ /app/frontend/
@@ -61,4 +62,6 @@ WORKDIR /app/protocol
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+ENV PORT=8000
+EXPOSE 8000
+CMD uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}

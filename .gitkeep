@@ -1,0 +1,5 @@
+mkdir -p protocol/save
+touch protocol/save/.gitkeep
+git add protocol/save/.gitkeep
+git commit -m "chore: keep protocol/save directory for sqlite database"
+git push

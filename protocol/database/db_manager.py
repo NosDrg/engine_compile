@@ -1,4 +1,5 @@
 # protocol/database/db_manager.py
+import os
 import sqlite3
 import hashlib
 import json
@@ -6,7 +7,12 @@ from typing import Optional, Dict, Any, List
 
 class DatabaseManager:
     def __init__(self, db_path: str = "save/match_arena.db"):
-        self.db_path = db_path
+        self.db_path = os.path.abspath(db_path)
+        
+        db_dir = os.path.dirname(self.db_path)
+        if db_dir:
+            os.makedirs(db_dir, exist_ok=True)
+            
         self._init_db()
 
     def _get_connection(self) -> sqlite3.Connection:
