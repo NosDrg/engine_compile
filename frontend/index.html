@@ -319,3 +319,98 @@
   <script type="module" src="js/home.js"></script>
 </body>
 </html>
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bot Arena - Turn-based RPS Board Game</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <h1>Bot Arena: Board Game Kéo – Búa – Bao</h1>
+    <p class="subtitle">Đấu trường AI thuật toán theo lượt (Lưới 9x9)</p>
+  </header>
+
+  <main class="container">
+    <!-- Cột bên trái: Thiết lập Bot & Trận đấu -->
+    <!-- Cập nhật đoạn Bot Setup và Arena trong frontend/index.html -->
+    <!-- Cột bên trái: Thiết lập Bot -->
+    <section class="panel control-panel">
+      <h2>1. Bài Nộp Của Bạn (Bot 0)</h2>
+        <div class="bot-setup p0">
+          <div class="form-group">
+            <label for="my-bot-id">Tên thí sinh (Username):</label>
+            <input type="text" id="my-bot-id" placeholder="nhập_tên_của_bạn" value="ThiSinh_A">
+          </div>
+          <div class="form-group">
+            <label for="my-bot-lang">Ngôn ngữ lập trình:</label>
+            <select id="my-bot-lang">
+              <option value="python">Python</option>
+              <option value="cpp">C++</option>
+              <option value="java">Java</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="my-bot-code">Mã nguồn thuật toán:</label>
+            <textarea id="my-bot-code" rows="7" placeholder="def get_move(state): ..."></textarea>
+          </div>
+
+          <!-- Hàng nút hành động: Kiểm tra & Nộp bài -->
+          <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <button id="btn-validate-my-bot" class="btn btn-secondary" style="flex: 1;">Kiểm tra code</button>
+            <button id="btn-submit-my-bot" class="btn btn-secondary" style="flex: 1;">Nộp & Lưu Bot</button>
+          </div>
+          <div id="my-bot-status" class="status-msg"></div>
+        </div>
+
+      <hr style="border: none; border-top: 1px solid var(--border-card); margin: 16px 0;">
+
+      <h2>2. Chọn Đối Thủ Từ Hệ Thống (Bot 1)</h2>
+      <div class="bot-setup p1">
+        <div class="form-group">
+          <label for="select-opponent">Danh sách thí sinh có sẵn:</label>
+          <select id="select-opponent">
+            <option value="">-- Đang tải danh sách thí sinh... --</option>
+          </select>
+        </div>
+        <button id="btn-refresh-opponents" class="btn btn-secondary" style="margin-bottom: 8px;">Làm mới danh sách đối thủ</button>
+      </div>
+
+      <div class="match-actions" style="margin-top: 16px;">
+        <button id="btn-start-match" class="btn btn-primary">Bắt Đầu Thách Đấu</button>
+      </div>
+    </section>
+
+    <!-- Cột bên phải: Bàn cờ -->
+    <section class="panel arena-panel">
+      <div class="match-info">
+        <div class="info-badge">Lượt (Round)<span id="display-round">0</span></div>
+        <div class="info-badge">Đến lượt<span id="display-player">-</span></div>
+        <div class="info-badge">Thời gian xử lý<span id="display-time">0ms</span></div>
+      </div>
+
+      <div class="board-wrapper">
+        <div id="board-container" class="board-container">
+          <!-- Lưới 9x9 sinh ra tại đây -->
+        </div>
+      </div>
+
+      <div class="legend">
+        <span><b class="p0-dot">●</b> Player 0 (Xanh)</span>
+        <span><b class="p1-dot">●</b> Player 1 (Đỏ)</span>
+        <span>Mục tiêu: Chiếm <b>A1/I9</b> hoặc diệt hết 1 loại quân</span>
+      </div>
+
+      <div id="match-result" class="result-box hidden">
+        <h3 id="result-title">Kết quả trận đấu</h3>
+        <p id="result-desc"></p>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
