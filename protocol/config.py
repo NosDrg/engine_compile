@@ -1,19 +1,25 @@
 # protocol/config.py
 import os
+from pathlib import Path
 
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, ".."))
+# Thư mục protocol/
+PROTOCOL_DIR = Path(__file__).resolve().parent
 
-# Thư mục chứa Binary Rust Engine
-DEFAULT_ENGINE_BIN = os.path.join(PROJECT_ROOT, "target", "release", "match_runner_engine")
-DEFAULT_WORKSPACE_DIR = os.path.join(PROJECT_ROOT, "workspace")
-DEFAULT_DRIVERS_DIR = os.path.join(PROJECT_ROOT, "drivers")
-DEFAULT_DB_PATH = os.path.join(CURRENT_DIR, "save/match_arena.db")
+# Thư mục gốc dự án (/app trên container hoặc thư mục root repo)
+ROOT_DIR = PROTOCOL_DIR.parent
 
-# Thư mục Frontend
-if os.path.isdir(os.path.join(PROJECT_ROOT, "frontend")):
-    FRONTEND_DIR = os.path.join(PROJECT_ROOT, "frontend")
-elif os.path.isdir(os.path.join(CURRENT_DIR, "frontend")):
-    FRONTEND_DIR = os.path.join(CURRENT_DIR, "frontend")
-else:
-    FRONTEND_DIR = os.path.join(PROJECT_ROOT, "frontend")
+# 1. Cơ sở dữ liệu SQLite trong thư mục save/
+DEFAULT_DB_PATH = str(PROTOCOL_DIR / "save" / "match_arena.db")
+
+# 2. Đường dẫn file thực thi Rust engine đã build
+DEFAULT_ENGINE_BIN = str(ROOT_DIR / "target" / "release" / "match_runner_engine")
+
+# 3. Thư mục sandbox chứa mã nguồn chạy tạm của bot
+DEFAULT_WORKSPACE_DIR = str(ROOT_DIR / "workspace")
+WORKSPACE_DIR = DEFAULT_WORKSPACE_DIR
+
+# 4. Thư mục chứa các driver giao tiếp với bot
+DEFAULT_DRIVERS_DIR = str(ROOT_DIR / "drivers")
+
+# 5. Thư mục giao diện tĩnh
+FRONTEND_DIR = str(ROOT_DIR / "frontend")

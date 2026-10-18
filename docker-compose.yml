@@ -12,13 +12,8 @@ services:
       - PYTHONUNBUFFERED=1
       - PYTHONPATH=/app/protocol
     volumes:
-      # 1. Mount database để giữ lại dữ liệu tài khoản, submission, match history
-      - ./protocol/save/match_arena.db:/app/protocol/save/match_arena.db
-
-      # 2. Mount thư mục frontend để khi bạn sửa JS/CSS/HTML ở máy host, web tự nhận ngay
+      - ./protocol/save:/app/protocol/save
       - ./frontend:/app/frontend:ro
-
-      # 3. Mount workspace để kiểm tra code tạm của bot khi cần debug
       - ./workspace:/app/workspace
 
     # Tùy chọn: Đảm bảo container nhìn thấy đủ CPU cores để CoreAllocator phân chia luồng
