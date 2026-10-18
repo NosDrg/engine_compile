@@ -1,7 +1,6 @@
 // frontend/js/match.js
 import { api } from './api.js';
 
-// Cache trước ảnh quân và block vào RAM trình duyệt để vẽ tức thì không bị trễ
 const PRELOAD_IMAGES = [
   'assets/rock.png',
   'assets/paper.png',
@@ -41,41 +40,85 @@ export class MatchController {
 
   async start(bot0, bot1) {
     this.stopPlayback();
-    this.resultBox.classList.add('hidden');
+    if (this.resultBox) this.resultBox.classList.add('hidden');
 
-    // Reset hiển thị đồng hồ / thông số
     if (this.roundEl) this.roundEl.textContent = '0';
     if (this.playerEl) this.playerEl.textContent = 'Đang tải trận đấu...';
     if (this.timeEl) this.timeEl.textContent = '0ms';
 
     let res;
+    const currentRunId = Symbol('run_token');
+    this._currentRunToken = currentRunId;
+
     try {
-      const queued = await api.createMatch(bot0.sub_id, bot1.sub_id, Boolean(bot0.ranked), bot0.seed ?? null, bot0.map_id ?? 'classic');
-      if (!queued.job_id) throw new Error(queued.error || 'Không tạo được lượt đấu.');
+      const queued = await api.createMatch(
+        bot0.sub_id,
+        bot1.sub_id,
+        Boolean(bot0.ranked),
+        bot0.seed ?? null,
+        bot0.map_id ?? 'classic'
+      );
+
+      if (!queued || !queued.job_id) {
+        throw new Error(queued?.error || 'Không tạo được lượt đấu.');
+      }
+
       this.activeJobId = queued.job_id;
       const cancelButton = document.getElementById('btn-cancel-match');
-      if (cancelButton) { cancelButton.hidden = false; cancelButton.disabled = false; }
+      if (cancelButton) {
+        cancelButton.hidden = false;
+        cancelButton.disabled = false;
+        cancelButton.textContent = 'Hủy trận đang chờ';
+      }
+
       if (this.playerEl) this.playerEl.textContent = 'Đang chờ engine…';
+
+      // Polling vòng lặp có bảo vệ Race Condition
       for (let attempt = 0; attempt < 900; attempt++) {
         await new Promise(resolve => setTimeout(resolve, 1000));
-        const status = await api.getQueueJob(queued.job_id);
+
+        // Nếu trận đã bị hủy bởi lượt bấm mới
+        if (this._currentRunToken !== currentRunId) return;
+
+        let status;
+        try {
+          status = await api.getQueueJob(queued.job_id);
+        } catch {
+          continue; // Bỏ qua 1 nhịp chập chờn mạng, không quăng lỗi ngay
+        }
+
+        if (!status || !status.job) continue;
+
         if (status.job.status === 'cancelled') {
           if (this.playerEl) this.playerEl.textContent = 'Trận đã được hủy';
           this.activeJobId = null;
           if (cancelButton) cancelButton.hidden = true;
           return;
         }
+
         if (cancelButton) {
-          cancelButton.hidden = status.job.status !== 'queued';
-          cancelButton.disabled = status.job.status !== 'queued';
-          cancelButton.textContent = status.job.status === 'running' ? 'Trận đang chạy' : 'Hủy trận đang chờ';
+          const isQueued = status.job.status === 'queued';
+          cancelButton.hidden = !isQueued;
+          cancelButton.disabled = !isQueued;
         }
-        if (status.job.status === 'failed') throw new Error(status.job.error_text || status.job.result?.error || 'Trận đấu thất bại.');
-        if (status.job.status === 'completed') { res = status.job.result; break; }
-        if (this.playerEl) this.playerEl.textContent = status.job.status === 'running' ? 'Đang chạy trận…' : 'Đang chờ engine…';
+
+        if (status.job.status === 'failed') {
+          throw new Error(status.job.error_text || status.job.result?.error || 'Trận đấu thất bại.');
+        }
+
+        if (status.job.status === 'completed') {
+          res = status.job.result;
+          break;
+        }
+
+        if (this.playerEl) {
+          this.playerEl.textContent = status.job.status === 'running' ? 'Đang chạy trận…' : 'Đang chờ engine…';
+        }
       }
+
       if (!res) throw new Error('Trận đấu đã chờ quá lâu. Hãy xem lại lịch sử trận.');
       if (!res.success) throw new Error(res.error || 'Trận đấu thất bại.');
+
       this.activeJobId = null;
       if (cancelButton) cancelButton.hidden = true;
     } catch (error) {
@@ -92,27 +135,35 @@ export class MatchController {
 
   async cancelWaitingMatch() {
     if (!this.activeJobId) return false;
-    const result = await api.cancelQueueJob(this.activeJobId);
-    return result.status === 'cancelled';
+    try {
+      const result = await api.cancelQueueJob(this.activeJobId);
+      const isOk = result?.status === 'cancelled';
+      if (isOk) this.activeJobId = null;
+      return isOk;
+    } catch {
+      return false;
+    }
   }
 
   playReplay(res) {
     this.stopPlayback();
-    this.resultBox.classList.add('hidden');
-    const replayList = res.replay || [];
-    const initialBoard = res.initial_board || res.board;
+    if (this.resultBox) this.resultBox.classList.add('hidden');
 
-    if (!initialBoard) {
-      alert("Lỗi: Server không gửi initial_board!");
-      return;
+    const replayList = res.replay || [];
+    let initialBoard = res.initial_board || res.board;
+
+    // Phục hồi bàn cờ nếu thiếu dữ liệu, chống alert chặn người dùng
+    if (!initialBoard || !Array.isArray(initialBoard)) {
+      console.warn("initial_board rỗng, tự động tạo ma trận 9x9 trống");
+      initialBoard = Array.from({ length: 9 }, () => Array(9).fill(null));
     }
 
-    // 1. Render bàn cờ lúc bắt đầu (Round 0)
     this.replayData = res;
     this.replayList = replayList;
     this.initialBoard = JSON.parse(JSON.stringify(initialBoard));
     this.stepIndex = 0;
     this.paused = false;
+
     this.boardView.render(JSON.parse(JSON.stringify(this.initialBoard)));
     this.updateReplayControls();
 
@@ -121,7 +172,6 @@ export class MatchController {
       return;
     }
 
-    // 2. Chạy từng bước (mỗi bước cách nhau 700ms để kịp nhìn rõ chuyển động)
     this.renderReplayStep(0);
     this.startTimer();
   }
@@ -137,25 +187,45 @@ export class MatchController {
         return;
       }
       this.renderReplayStep(this.stepIndex + 1);
-    }, 700 / this.playbackSpeed);
+    }, Math.max(50, 700 / (this.playbackSpeed || 1)));
   }
 
   renderReplayStep(step) {
     this.stepIndex = Math.max(0, Math.min(step, this.replayList.length));
     const board = JSON.parse(JSON.stringify(this.initialBoard));
     let last = null;
+
     for (let i = 0; i < this.stepIndex; i++) {
       const move = this.replayList[i].move_obj || this.replayList[i].move || this.replayList[i];
-      const piece = board[move.from_y]?.[move.from_x];
-      if (piece) { board[move.from_y][move.from_x] = null; board[move.to_y][move.to_x] = piece; last = move; }
+      if (!move) continue;
+
+      const fx = Number(move.from_x), fy = Number(move.from_y);
+      const tx = Number(move.to_x), ty = Number(move.to_y);
+
+      // Kiểm tra an toàn biên mảng để tránh TypeError
+      if (board[fy] && board[fy][fx] && board[ty]) {
+        const piece = board[fy][fx];
+        board[fy][fx] = null;
+        board[ty][tx] = piece;
+        last = { from_x: fx, from_y: fy, to_x: tx, to_y: ty };
+      }
     }
-    this.boardView.render(board, last ? { from_x: last.from_x, from_y: last.from_y, to_x: last.to_x, to_y: last.to_y } : undefined);
+
+    this.boardView.render(board, last || undefined);
+
     const item = this.stepIndex ? this.replayList[this.stepIndex - 1] : null;
     if (this.roundEl) this.roundEl.textContent = String(item?.round ?? this.stepIndex);
-    if (this.playerEl) this.playerEl.textContent = item ? (item.player === 0 ? 'Player 0 (Xanh dương)' : 'Player 1 (Đỏ)') : 'Bắt đầu';
-    if (this.timeEl) this.timeEl.textContent = (item?.elapsed_ms ?? 0) + 'ms';
+    if (this.playerEl) {
+      const p = item ? (item.player !== undefined ? item.player : item.player_id) : null;
+      this.playerEl.textContent = p !== null ? (p === 0 ? 'Player 0 (Xanh dương)' : 'Player 1 (Đỏ)') : 'Bắt đầu';
+    }
+    if (this.timeEl) this.timeEl.textContent = `${item?.elapsed_ms ?? item?.execution_time_ms ?? 0}ms`;
+
     const seek = document.getElementById('replay-seek');
-    if (seek) { seek.max = String(this.replayList.length); seek.value = String(this.stepIndex); }
+    if (seek) {
+      seek.max = String(this.replayList.length);
+      seek.value = String(this.stepIndex);
+    }
     this.updateReplayControls();
   }
 
@@ -167,15 +237,21 @@ export class MatchController {
   }
 
   showResult(winnerSlot, reason) {
+    if (!this.resultBox) return;
     this.resultBox.classList.remove('hidden');
+
     let winnerText = 'HÒA';
     if (winnerSlot === 0) winnerText = 'Player 0 (Xanh dương)';
     else if (winnerSlot === 1) winnerText = 'Player 1 (Đỏ)';
 
-    this.resultTitle.textContent = `Người thắng: ${winnerText}`;
-    this.resultDesc.textContent = `Lý do: ${reason || 'Trận đấu kết thúc'}`;
+    if (this.resultTitle) this.resultTitle.textContent = `Người thắng: ${winnerText}`;
+    if (this.resultDesc) this.resultDesc.textContent = `Lý do: ${reason || 'Trận đấu kết thúc'}`;
+
     const seed = document.getElementById('match-seed-result');
-    if (seed) seed.textContent = `Map: ${this.replayData?.map_id || 'classic'}` + (this.replayData?.seed != null ? ` · Seed: ${this.replayData.seed}` : '');
+    if (seed) {
+      seed.textContent = `Map: ${this.replayData?.map_id || 'classic'}` + 
+        (this.replayData?.seed != null ? ` · Seed: ${this.replayData.seed}` : '');
+    }
 
     this.winAudio.play().catch(() => {});
   }

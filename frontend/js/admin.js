@@ -95,9 +95,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const host = document.getElementById('admin-tournaments');
     const details = await Promise.all(tournaments.map((t) => api.getTournament(t.id)));
     host.innerHTML = tournaments.length ? tournaments.map((t, i) => {
-      const entries = details[i].tournament.entries.map((e) => '<span class="badge">#' + e.seed + ' ' + escapeHtml(e.name) + '</span>').join(' ');
-      const standings = details[i].tournament.standings.map((s, rank) => '<div class="version-row">' + (rank+1) + '. ' + escapeHtml(s.name) + ' · ' + s.points + ' điểm · ' + s.wins + ' thắng / ' + s.draws + ' hoà</div>').join('');
-      const games = details[i].tournament.games.map((g) => '<div class="version-row"><span>Vòng ' + g.round_number + ': ' +
+      const entries = details[i].tournament.entries.map((e) => '<span class="badge">#' + escapeHtml(e.seed) + ' ' + escapeHtml(e.name) + '</span>').join(' ');
+      const standings = details[i].tournament.standings.map((s, rank) => '<div class="version-row">' + (rank+1) + '. ' + escapeHtml(s.name) + ' · ' + escapeHtml(s.points) + ' điểm · ' + escapeHtml(s.wins) + ' thắng / ' + escapeHtml(s.draws) + ' hoà</div>').join('');
+      const games = details[i].tournament.games.map((g) => '<div class="version-row"><span>Vòng ' + escapeHtml(g.round_number) + ': ' +
         escapeHtml(g.team0_name || 'TBD') + ' vs ' + escapeHtml(g.team1_name || 'BYE') + ' · ' + escapeHtml(g.status) +
         (g.winner_name ? ' · Thắng: ' + escapeHtml(g.winner_name) : '') + '</span>' +
         (g.status === 'failed' ? '<button class="btn btn-ghost btn-sm" data-retry="' + escapeHtml(t.id) + '" data-game="' + escapeHtml(g.id) + '">Chạy lại</button>' : '') + '</div>').join('');

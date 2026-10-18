@@ -6,170 +6,21 @@
   <meta name="description" content="Bot Arena – Đấu trường AI Kéo Búa Bao. Viết thuật toán, nộp bot, thách đấu với các thí sinh khác trên lưới 9×9.">
   <title>Bot Arena – Trang chủ</title>
   <link rel="stylesheet" href="css/main.css">
-  <style>
-    /* ── Hero ─────────────────────────────────── */
-    .hero {
-      position: relative;
-      padding: 100px 32px 80px;
-      text-align: center;
-      overflow: hidden;
-    }
-    .hero-glow {
-      position: absolute; inset: 0; pointer-events: none;
-      background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(79,70,229,0.25) 0%, transparent 70%);
-    }
-    .hero-badge {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 6px 16px;
-      border-radius: 99px;
-      background: rgba(129,140,248,0.12);
-      border: 1px solid rgba(129,140,248,0.3);
-      color: #818cf8;
-      font-size: 0.8rem;
-      font-weight: 600;
-      margin-bottom: 24px;
-      animation: fadeIn 0.5s ease;
-    }
-    .hero h1 {
-      font-size: clamp(2.4rem, 6vw, 4rem);
-      font-weight: 800;
-      line-height: 1.15;
-      margin-bottom: 20px;
-      animation: fadeIn 0.5s 0.1s ease both;
-    }
-    .hero p {
-      font-size: 1.1rem;
-      color: var(--text-muted);
-      max-width: 560px;
-      margin: 0 auto 36px;
-      animation: fadeIn 0.5s 0.2s ease both;
-    }
-    .hero-cta {
-      display: flex; align-items: center; justify-content: center; gap: 12px;
-      flex-wrap: wrap;
-      animation: fadeIn 0.5s 0.3s ease both;
-    }
-    .hero-img-wrapper {
-      margin: 60px auto 0;
-      max-width: 900px;
-      border-radius: 16px;
-      overflow: hidden;
-      border: 1px solid var(--border-card);
-      box-shadow: 0 24px 64px rgba(0,0,0,0.6);
-      animation: fadeIn 0.6s 0.4s ease both;
-    }
-    .hero-img-wrapper img { width: 100%; display: block; }
 
-    /* ── Features ─────────────────────────────── */
-    .features { padding: 80px 32px; }
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 20px;
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-    .feature-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 28px 24px;
-      transition: var(--transition);
-    }
-    .feature-card:hover {
-      border-color: var(--border-glow);
-      transform: translateY(-3px);
-      box-shadow: 0 12px 40px rgba(0,0,0,0.4);
-    }
-    .feature-icon {
-      width: 48px; height: 48px;
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.5rem;
-      margin-bottom: 16px;
-    }
-    .feature-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
-    .feature-card p  { font-size: 0.875rem; color: var(--text-muted); line-height: 1.65; }
-
-    /* ── Steps ────────────────────────────────── */
-    .steps-section { padding: 64px 32px; }
-    .steps-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 24px;
-      max-width: 900px;
-      margin: 0 auto;
-      counter-reset: steps;
-    }
-    .step-item { text-align: center; }
-    .step-num {
-      width: 52px; height: 52px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #4f46e5, #06b6d4);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.2rem; font-weight: 800;
-      margin: 0 auto 16px;
-      box-shadow: 0 0 20px rgba(79,70,229,0.4);
-    }
-    .step-item h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 6px; }
-    .step-item p  { font-size: 0.82rem; color: var(--text-muted); }
-
-    /* ── Leaderboard preview ──────────────────── */
-    .lb-preview { padding: 64px 32px; }
-    .lb-preview-inner { max-width: 700px; margin: 0 auto; }
-    .lb-row {
-      display: flex; align-items: center; gap: 16px;
-      padding: 12px 16px;
-      border-radius: 10px;
-      margin-bottom: 8px;
-      transition: var(--transition);
-      background: var(--bg-glass);
-      border: 1px solid var(--border-card);
-    }
-    .lb-row:hover { background: rgba(255,255,255,0.04); }
-    .lb-rank { width: 28px; text-align: center; font-weight: 700; color: var(--text-muted); }
-    .lb-rank.gold   { color: #fbbf24; font-size: 1.1rem; }
-    .lb-rank.silver { color: #94a3b8; font-size: 1.05rem; }
-    .lb-rank.bronze { color: #cd7c3a; font-size: 1rem; }
-    .lb-avatar {
-      width: 36px; height: 36px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid var(--border-card);
-    }
-    .lb-name { flex: 1; font-weight: 600; font-size: 0.9rem; }
-    .lb-score { font-weight: 700; color: var(--accent); font-size: 0.9rem; }
-    .lb-lang { }
-
-    /* ── CTA Banner ───────────────────────────── */
-    .cta-section {
-      padding: 80px 32px;
-      text-align: center;
-    }
-    .cta-box {
-      max-width: 600px;
-      margin: 0 auto;
-      background: linear-gradient(135deg, rgba(79,70,229,0.15), rgba(6,182,212,0.1));
-      border: 1px solid rgba(79,70,229,0.3);
-      border-radius: 20px;
-      padding: 48px 40px;
-    }
-    .cta-box h2 { font-size: 1.9rem; font-weight: 800; margin-bottom: 12px; }
-    .cta-box p  { color: var(--text-muted); margin-bottom: 28px; }
-  </style>
+<link rel="stylesheet" href="css/index-page.css">
 </head>
-<body>
+<body class="has-navbar">
   <!-- Navbar -->
   <nav class="navbar" id="main-navbar">
     <a href="index.html" class="navbar-brand" id="nav-brand">
-      <span class="brand-icon">⚔️</span>
+
       Bot Arena
     </a>
     <ul class="navbar-nav">
-      <li><a href="index.html" class="active" id="nav-home">🏠 Trang chủ</a></li>
-      <li><a href="arena.html" id="nav-arena">🎮 Thi đấu</a></li>
-      <li><a href="leaderboard.html" id="nav-lb">🏆 Leaderboard</a></li>
-      <li><a href="guide.html" id="nav-guide">📖 Hướng dẫn</a></li>
+      <li><a href="index.html" class="active" id="nav-home"> Trang chủ</a></li>
+      <li><a href="arena.html" id="nav-arena"> Thi đấu</a></li>
+      <li><a href="leaderboard.html" id="nav-lb"> Leaderboard</a></li>
+      <li><a href="guide.html" id="nav-guide"> Hướng dẫn</a></li>
     </ul>
     <div class="navbar-actions" id="navbar-actions">
       <a href="login.html" class="btn btn-ghost btn-sm" id="btn-nav-login">Đăng nhập</a>
@@ -181,12 +32,12 @@
     <!-- Hero -->
     <section class="hero">
       <div class="hero-glow"></div>
-      <div class="hero-badge">🤖 Đấu trường AI · Lưới 9×9</div>
+      <div class="hero-badge"> Đấu trường AI · Lưới 9×9</div>
       <h1 class="gradient-text">Lập trình Bot.<br>Thách đấu bất kỳ ai.</h1>
       <p>Viết thuật toán Kéo-Búa-Bao bằng Python, C++ hoặc Java. Nộp bot của bạn và chinh phục bảng xếp hạng toàn cầu.</p>
       <div class="hero-cta">
-        <a href="register.html" class="btn btn-primary btn-lg" id="hero-btn-register">🚀 Bắt đầu ngay</a>
-        <a href="guide.html" class="btn btn-secondary btn-lg" id="hero-btn-guide">📖 Xem hướng dẫn</a>
+        <a href="register.html" class="btn btn-primary btn-lg" id="hero-btn-register"> Bắt đầu ngay</a>
+        <a href="guide.html" class="btn btn-secondary btn-lg" id="hero-btn-guide"> Xem hướng dẫn</a>
       </div>
       <div class="hero-img-wrapper">
         <img src="assets/hero_banner.jpg" alt="Bot Arena game board preview" id="hero-banner-img">
@@ -194,8 +45,8 @@
     </section>
 
     <!-- Stats -->
-    <section style="padding: 0 32px 60px;">
-      <div style="max-width:900px; margin:0 auto; display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
+    <section class="home-stats-section">
+      <div class="home-stats-grid">
         <div class="stat-card">
           <div class="stat-value gradient-text" id="stat-players">—</div>
           <div class="stat-label">Thí sinh</div>
@@ -219,32 +70,32 @@
       </div>
       <div class="features-grid">
         <div class="feature-card">
-          <div class="feature-icon" style="background:rgba(56,189,248,0.12);">🧠</div>
+
           <h3>AI thuật toán thực sự</h3>
           <p>Bot được chạy trực tiếp bằng code bạn viết — Python, C++, Java. Không giới hạn chiến thuật.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon" style="background:rgba(244,63,94,0.12);">⚡</div>
+
           <h3>Giới hạn tài nguyên</h3>
           <p>Engine giới hạn thời gian phản hồi và một số tài nguyên của bot. Nền tảng chưa có sandbox hệ điều hành đầy đủ.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon" style="background:rgba(129,140,248,0.12);">🎯</div>
+
           <h3>Chiến thuật sâu sắc</h3>
           <p>Lưới 9×9, quân Búa-Bao-Kéo chiếm lĩnh căn cứ. Dễ học nhưng khó master.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon" style="background:rgba(52,211,153,0.12);">📺</div>
+
           <h3>Replay trực quan</h3>
           <p>Xem lại từng nước đi của trận đấu với animation từng lượt. Phân tích chiến thuật dễ dàng.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon" style="background:rgba(251,191,36,0.12);">🏆</div>
+
           <h3>Leaderboard thời gian thực</h3>
           <p>Xếp hạng toàn cầu cập nhật tức thì. Chinh phục vị trí #1 bảng xếp hạng.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon" style="background:rgba(239,68,68,0.12);">🔒</div>
+
           <h3>Tài khoản bảo mật</h3>
           <p>Đăng ký tài khoản, quản lý nhiều phiên bản bot, theo dõi lịch sử trận đấu.</p>
         </div>
@@ -284,17 +135,17 @@
     <!-- Leaderboard Preview -->
     <section class="lb-preview">
       <div class="section-header">
-        <h2>🏆 Bảng xếp hạng</h2>
+        <h2> Bảng xếp hạng</h2>
         <p>Top những thí sinh xuất sắc nhất</p>
       </div>
       <div class="lb-preview-inner" id="lb-preview-list">
         <!-- loaded by JS -->
-        <div class="flex-center" style="padding:40px; color:var(--text-muted);">
+        <div class="flex-center home-loading-state">
           <span class="spinner"></span>&nbsp; Đang tải...
         </div>
       </div>
       <div class="text-center mt-3">
-        <a href="leaderboard.html" class="btn btn-secondary" id="btn-view-full-lb">Xem bảng xếp hạng đầy đủ →</a>
+        <a href="leaderboard.html" class="btn btn-secondary" id="btn-view-full-lb">Xem bảng xếp hạng đầy đủ</a>
       </div>
     </section>
 
@@ -303,7 +154,7 @@
       <div class="cta-box">
         <h2 class="gradient-text">Sẵn sàng thi đấu?</h2>
         <p>Tham gia ngay hôm nay và chứng minh thuật toán của bạn là số 1!</p>
-        <a href="register.html" class="btn btn-primary btn-lg" id="cta-btn-join">🎮 Tham gia miễn phí</a>
+        <a href="register.html" class="btn btn-primary btn-lg" id="cta-btn-join"> Tham gia miễn phí</a>
       </div>
     </section>
 
@@ -317,100 +168,5 @@
 
   <script type="module" src="js/auth.js"></script>
   <script type="module" src="js/home.js"></script>
-</body>
-</html>
-
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bot Arena - Turn-based RPS Board Game</title>
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-  <header>
-    <h1>Bot Arena: Board Game Kéo – Búa – Bao</h1>
-    <p class="subtitle">Đấu trường AI thuật toán theo lượt (Lưới 9x9)</p>
-  </header>
-
-  <main class="container">
-    <!-- Cột bên trái: Thiết lập Bot & Trận đấu -->
-    <!-- Cập nhật đoạn Bot Setup và Arena trong frontend/index.html -->
-    <!-- Cột bên trái: Thiết lập Bot -->
-    <section class="panel control-panel">
-      <h2>1. Bài Nộp Của Bạn (Bot 0)</h2>
-        <div class="bot-setup p0">
-          <div class="form-group">
-            <label for="my-bot-id">Tên thí sinh (Username):</label>
-            <input type="text" id="my-bot-id" placeholder="nhập_tên_của_bạn" value="ThiSinh_A">
-          </div>
-          <div class="form-group">
-            <label for="my-bot-lang">Ngôn ngữ lập trình:</label>
-            <select id="my-bot-lang">
-              <option value="python">Python</option>
-              <option value="cpp">C++</option>
-              <option value="java">Java</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="my-bot-code">Mã nguồn thuật toán:</label>
-            <textarea id="my-bot-code" rows="7" placeholder="def get_move(state): ..."></textarea>
-          </div>
-
-          <!-- Hàng nút hành động: Kiểm tra & Nộp bài -->
-          <div style="display: flex; gap: 8px; margin-top: 8px;">
-            <button id="btn-validate-my-bot" class="btn btn-secondary" style="flex: 1;">Kiểm tra code</button>
-            <button id="btn-submit-my-bot" class="btn btn-secondary" style="flex: 1;">Nộp & Lưu Bot</button>
-          </div>
-          <div id="my-bot-status" class="status-msg"></div>
-        </div>
-
-      <hr style="border: none; border-top: 1px solid var(--border-card); margin: 16px 0;">
-
-      <h2>2. Chọn Đối Thủ Từ Hệ Thống (Bot 1)</h2>
-      <div class="bot-setup p1">
-        <div class="form-group">
-          <label for="select-opponent">Danh sách thí sinh có sẵn:</label>
-          <select id="select-opponent">
-            <option value="">-- Đang tải danh sách thí sinh... --</option>
-          </select>
-        </div>
-        <button id="btn-refresh-opponents" class="btn btn-secondary" style="margin-bottom: 8px;">Làm mới danh sách đối thủ</button>
-      </div>
-
-      <div class="match-actions" style="margin-top: 16px;">
-        <button id="btn-start-match" class="btn btn-primary">Bắt Đầu Thách Đấu</button>
-      </div>
-    </section>
-
-    <!-- Cột bên phải: Bàn cờ -->
-    <section class="panel arena-panel">
-      <div class="match-info">
-        <div class="info-badge">Lượt (Round)<span id="display-round">0</span></div>
-        <div class="info-badge">Đến lượt<span id="display-player">-</span></div>
-        <div class="info-badge">Thời gian xử lý<span id="display-time">0ms</span></div>
-      </div>
-
-      <div class="board-wrapper">
-        <div id="board-container" class="board-container">
-          <!-- Lưới 9x9 sinh ra tại đây -->
-        </div>
-      </div>
-
-      <div class="legend">
-        <span><b class="p0-dot">●</b> Player 0 (Xanh)</span>
-        <span><b class="p1-dot">●</b> Player 1 (Đỏ)</span>
-        <span>Mục tiêu: Chiếm <b>A1/I9</b> hoặc diệt hết 1 loại quân</span>
-      </div>
-
-      <div id="match-result" class="result-box hidden">
-        <h3 id="result-title">Kết quả trận đấu</h3>
-        <p id="result-desc"></p>
-      </div>
-    </section>
-  </main>
-
-  <script type="module" src="js/app.js"></script>
 </body>
 </html>

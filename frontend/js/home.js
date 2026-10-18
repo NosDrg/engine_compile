@@ -35,29 +35,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       const opponents = res.leaderboard || [];
 
       if (opponents.length === 0) {
-        lbList.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:24px;">Chưa có thí sinh nào. Hãy là người đầu tiên!</p>';
+        lbList.innerHTML = '<p class="home-empty-state">Chưa có thí sinh nào. Hãy là người đầu tiên!</p>';
         return;
       }
 
       const sorted = opponents.slice(0, 5).map((p) => ({ ...p, elo: p.rating }));
 
-      const rankIcons = ['🥇', '🥈', '🥉'];
-      const langEmoji = { python: '🐍', cpp: '⚙️', java: '☕' };
-
       lbList.innerHTML = sorted.map((p, i) => `
         <div class="lb-row">
           <div class="lb-rank ${i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : ''}">
-            ${i < 3 ? rankIcons[i] : i + 1}
+            ${i + 1}
           </div>
           <img class="lb-avatar" src="assets/default_avatar.jpg" alt="${escHtml(p.username)}">
           <div class="lb-name">${escHtml(p.username)}</div>
-          <div class="lb-lang">${langEmoji[p.language] || '🤖'} <span class="badge badge-purple">${(p.language || 'bot').toUpperCase()}</span></div>
+          <div class="lb-lang"><span class="badge badge-purple">${(p.language || 'bot').toUpperCase()}</span></div>
           <div class="lb-score">${p.elo} ELO</div>
         </div>
       `).join('');
 
     } catch (err) {
-      lbList.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:24px;">Không thể tải leaderboard.</p>';
+      lbList.innerHTML = '<p class="home-empty-state">Không thể tải leaderboard.</p>';
     }
   }
 });

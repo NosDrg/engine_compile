@@ -1,34 +1,32 @@
-# database.py
+# protocol/database/db_manager.py
 import sqlite3
 import hashlib
 import json
-from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 class DatabaseManager:
-    def __init__(self, db_path: str = "match_arena.db"):
+    def __init__(self, db_path: str = "save/match_arena.db"):
         self.db_path = db_path
         self._init_db()
 
-    def _get_connection(self):
+    def _get_connection(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         return conn
 
-    def _init_db(self):
+    def _init_db(self) -> None:
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            
-            # 1. Bảng User
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS users (
+                CREATE TABLE IF NOT EXISTS rating_history (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT UNIQUE NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    user_id INTEGER NOT NULL,
+                    old_rating INTEGER NOT NULL,
+                    new_rating INTEGER NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id)
                 )
             """)
-
-            # 2. Bảng Submissions (Lưu code và hash SHA256)
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS submissions (
                     id TEXT PRIMARY KEY,
@@ -36,14 +34,12 @@ class DatabaseManager:
                     language TEXT NOT NULL,
                     source_code TEXT NOT NULL,
                     code_hash TEXT NOT NULL,
-                    status TEXT NOT NULL,          -- VALID, COMPILE_ERROR
+                    status TEXT NOT NULL,
                     error_log TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users(id)
                 )
             """)
-
-            # 3. Bảng Matches (Lưu kết quả & Replay JSON)
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS matches (
                     id TEXT PRIMARY KEY,
@@ -51,11 +47,11 @@ class DatabaseManager:
                     sub0_id TEXT NOT NULL,
                     user1_id INTEGER NOT NULL,
                     sub1_id TEXT NOT NULL,
-                    winner_user_id INTEGER,        -- NULL nếu hòa
+                    winner_user_id INTEGER,
                     reason TEXT NOT NULL,
                     bot0_ram_mb REAL,
                     bot1_ram_mb REAL,
-                    replay_json TEXT NOT NULL,     -- Lưu mảng move_history
+                    replay_json TEXT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (user0_id) REFERENCES users(id),
                     FOREIGN KEY (user1_id) REFERENCES users(id),
@@ -78,9 +74,9 @@ class DatabaseManager:
                 return row["id"]
             cursor.execute("INSERT INTO users (username) VALUES (?)", (username,))
             conn.commit()
-            return cursor.lastrowid  # type: ignore
+            return cursor.lastrowid
 
-    def save_submission(self, sub_id: str, user_id: int, language: str, source_code: str, status: str, error_log: str = ""):
+    def save_submission(self, sub_id: str, user_id: int, language: str, source_code: str, status: str, error_log: str = "") -> None:
         code_hash = self.compute_hash(source_code)
         with self._get_connection() as conn:
             cursor = conn.cursor()
@@ -101,8 +97,32 @@ class DatabaseManager:
             row = cursor.fetchone()
             return dict(row) if row else None
 
+    def get_all_valid_opponents(self, exclude_username: Optional[str] = None) -> List[Dict[str, Any]]:
+        query = """
+            SELECT u.username, s.id, s.language, s.created_at
+            FROM submissions s
+            JOIN users u ON s.user_id = u.id
+            WHERE s.status = 'VALID'
+            GROUP BY u.id
+            ORDER BY s.created_at DESC
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            rows = cursor.execute(query).fetchall()
+
+        opponents = []
+        for r in rows:
+            if exclude_username and r["username"] == exclude_username:
+                continue
+            opponents.append({
+                "username": r["username"],
+                "sub_id": r["id"],
+                "language": r["language"]
+            })
+        return opponents
+
     def save_match(self, match_id: str, user0_id: int, sub0_id: str, user1_id: int, sub1_id: str,
-                   winner_user_id: Optional[int], reason: str, bot0_ram: float, bot1_ram: float, replay_data: list):
+                   winner_user_id: Optional[int], reason: str, bot0_ram: float, bot1_ram: float, replay_data: list) -> None:
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
@@ -116,7 +136,6 @@ class DatabaseManager:
             ))
             conn.commit()
 
-    # Thêm vào DatabaseManager trong protocol/database.py
     def get_match_by_id(self, match_id: str) -> Optional[Dict[str, Any]]:
         with self._get_connection() as conn:
             cursor = conn.cursor()
@@ -136,7 +155,6 @@ class DatabaseManager:
             row = cursor.fetchone()
             if not row:
                 return None
-            
             data = dict(row)
             data["replay_data"] = json.loads(data["replay_json"])
             del data["replay_json"]

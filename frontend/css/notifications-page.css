@@ -1,0 +1,1 @@
+.wrap{max-width:900px;margin:35px auto;padding:20px;position:relative;z-index:1}.note{padding:16px;margin:12px 0;background:var(--bg-card);border:1px solid var(--border-card);border-radius:12px}.unread{border-color:var(--accent)}.note p{margin:6px 0;color:var(--text-muted)}

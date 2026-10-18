@@ -5,6 +5,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('register-form');
   const status = document.getElementById('reg-status');
   const button = document.getElementById('btn-register');
+  [
+    ['toggle-pwd1', 'reg-password'],
+    ['toggle-pwd2', 'reg-confirm']
+  ].forEach(([toggleId, inputId]) => {
+    const toggle = document.getElementById(toggleId);
+    const input = document.getElementById(inputId);
+    toggle?.addEventListener('click', () => {
+      const visible = input.type === 'password';
+      input.type = visible ? 'text' : 'password';
+      toggle.textContent = visible ? '\u1ea8n' : 'Hi\u1ec7n';
+      toggle.setAttribute('aria-pressed', String(visible));
+    });
+  });
+
   form?.addEventListener('submit', async (event) => {
     event.preventDefault();
     status.textContent = '';

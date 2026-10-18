@@ -3,21 +3,11 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Hồ sơ người chơi · Bot Arena</title><link rel="stylesheet" href="css/main.css">
-  <style>
-    .profile-wrap{max-width:900px;margin:35px auto;padding:20px;position:relative;z-index:1}
-    .profile-card{padding:22px;margin:14px 0;background:var(--bg-card);border:1px solid var(--border-card);border-radius:12px}
-    .profile-card h2{margin-bottom:14px}.profile-heading{display:flex;align-items:center;gap:16px}
-    .profile-avatar{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#4f46e5,#06b6d4);font-size:1.7rem;font-weight:800}
-    .profile-stats{display:flex;flex-wrap:wrap;gap:12px;margin:20px 0}.profile-stats span{padding:10px 14px;border:1px solid var(--border-card);border-radius:9px;color:var(--text-muted)}
-    .profile-stats strong{display:block;color:var(--text-main);font-size:1.15rem}.profile-link{overflow-wrap:anywhere;color:var(--accent)}
-    .match-row{display:flex;justify-content:space-between;gap:14px;padding:12px 4px;border-bottom:1px solid var(--border-card)}
-    .profile-status{min-height:1.5em;color:var(--accent)}.profile-form-grid{display:grid;gap:15px}
-    .profile-form-grid textarea{min-height:100px;resize:vertical}.privacy-choice{display:flex;align-items:flex-start;gap:10px;color:var(--text-muted)}
-    @media(max-width:600px){.profile-wrap{padding:12px}.profile-heading{align-items:flex-start}.match-row{flex-direction:column}}
-  </style>
+
+<link rel="stylesheet" href="css/profile-page.css">
 </head>
-<body>
-  <nav class="navbar"><a class="navbar-brand" href="/">⚔ Bot Arena</a><div class="navbar-actions" id="navbar-actions"></div></nav>
+<body class="has-navbar">
+  <nav class="navbar"><a class="navbar-brand" href="/"> Bot Arena</a><div class="navbar-actions" id="navbar-actions"></div></nav>
   <main class="profile-wrap">
     <h1 id="page-title">Hồ sơ người chơi</h1>
     <section id="summary" class="profile-card" aria-live="polite">Đang tải hồ sơ…</section>
@@ -25,7 +15,7 @@
       <h2>Thông tin hồ sơ</h2>
       <form id="profile-form" class="profile-form-grid">
         <div class="form-group"><label for="display-name">Tên hiển thị</label><input id="display-name" class="form-control" maxlength="64" required></div>
-        <div class="form-group"><label for="avatar-id">Ảnh đại diện</label><select id="avatar-id" class="form-control"><option value="robot">🤖 Robot</option><option value="rock">🪨 Đá</option><option value="paper">📄 Giấy</option><option value="scissors">✂️ Kéo</option><option value="trophy">🏆 Cúp</option></select></div>
+        <div class="form-group"><label for="avatar-id">Ảnh đại diện</label><select id="avatar-id" class="form-control"><option value="robot"> Robot</option><option value="rock"> Đá</option><option value="paper"> Giấy</option><option value="scissors"> Kéo</option><option value="trophy"> Cúp</option></select></div>
         <div class="form-group"><label for="bio">Giới thiệu (tối đa 280 ký tự)</label><textarea id="bio" class="form-control" maxlength="280"></textarea></div>
         <label class="privacy-choice"><input id="profile-public" type="checkbox"><span><strong>Hồ sơ công khai</strong><br>Khi tắt, hồ sơ bị ẩn khỏi hồ sơ công khai, bảng xếp hạng và danh sách đối thủ. Replay trận của bạn chỉ người tham gia xem được.</span></label>
         <button class="btn btn-primary" type="submit">Lưu hồ sơ</button>

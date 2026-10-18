@@ -85,9 +85,9 @@ async function loadPublicProfile(username, status) {
 }
 
 function renderSummary(user) {
-  const avatar = ({ robot: '🤖', rock: '🪨', paper: '📄', scissors: '✂️', trophy: '🏆' })[user.avatar_id] || escapeHtml((user.display_name || user.username || '?').trim().slice(0, 1).toUpperCase());
+  const avatar = escapeHtml((user.display_name || user.username || '?').trim().slice(0, 1).toUpperCase());
   $('summary').innerHTML = '<div class="profile-heading"><div class="profile-avatar" aria-hidden="true">' + avatar + '</div><div><h2>' + escapeHtml(user.display_name || user.username) + '</h2><p>@' + escapeHtml(user.username) + '</p></div></div>' +
-    (user.bio ? '<p style="margin-top:14px">' + escapeHtml(user.bio) + '</p>' : '') +
+    (user.bio ? '<p class="profile-bio">' + escapeHtml(user.bio) + '</p>' : '') +
     '<div class="profile-stats"><span><strong>' + Number(user.rating || 1000) + '</strong>Rating</span><span><strong>' + Number(user.wins || 0) + '</strong>Thắng</span><span><strong>' + Number(user.losses || 0) + '</strong>Thua</span><span><strong>' + Number(user.draws || 0) + '</strong>Hòa</span></div><a href="/missions.html">Xem điểm thưởng và nhiệm vụ</a>';
 }
 

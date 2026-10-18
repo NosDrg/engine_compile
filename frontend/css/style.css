@@ -22,7 +22,8 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 18px;
   background: radial-gradient(circle at 50% 10%, #1e1b4b 0%, var(--bg-main) 70%);
   color: var(--text-main);
   min-height: 100vh;
@@ -53,7 +54,7 @@ header .subtitle {
   max-width: 1300px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 460px 1fr;
+  grid-template-columns: minmax(0, 460px) minmax(0, 1fr);
   gap: 24px;
   align-items: start;
 }
@@ -359,6 +360,17 @@ textarea {
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
 }
 
+@media (max-width: 900px) {
+  :root { --cell-size: min(8vw, 54px); }
+  body { padding: 16px; }
+  .container { grid-template-columns: minmax(0, 1fr); }
+  .board-container { gap: 1px; padding: 4px; }
+  .cell { min-width: 0; min-height: 0; }
+  .piece { width: 80%; height: 80%; }
+  .piece-img { width: 80%; height: 80%; }
+  .info-badge { min-width: 0; }
+}
+
 /* Chú thích luật chơi */
 .legend {
   display: flex;
@@ -370,8 +382,6 @@ textarea {
   color: var(--text-muted);
 }
 
-.legend b.p0-dot { color: var(--p0-primary); margin-right: 4px; }
-.legend b.p1-dot { color: var(--p1-primary); margin-right: 4px; }
 
 /* Hộp thông báo kết quả */
 .result-box {

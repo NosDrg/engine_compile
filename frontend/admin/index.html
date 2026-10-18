@@ -3,12 +3,11 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Quản trị · Bot Arena</title><link rel="stylesheet" href="../css/main.css">
-<style>
-.admin-page{max-width:1100px;margin:32px auto;padding:0 20px}.admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}.admin-card{background:var(--bg-card);border:1px solid var(--border-card);border-radius:12px;padding:18px;margin:16px 0}.admin-stat{font-size:1.8rem;font-weight:800;color:var(--accent)}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--border-card)}.table-scroll{overflow:auto}#admin-status{min-height:24px;color:var(--danger)}
-</style>
+
+<link rel="stylesheet" href="../css/admin-page.css">
 </head>
-<body>
-<nav class="navbar"><a class="navbar-brand" href="/index.html">⚔️ Bot Arena · Quản trị</a><div class="navbar-actions" id="navbar-actions"></div></nav>
+<body class="has-navbar">
+<nav class="navbar"><a class="navbar-brand" href="/index.html"> Bot Arena · Quản trị</a><div class="navbar-actions" id="navbar-actions"></div></nav>
 <main class="admin-page">
 <header><h1>Trang quản trị</h1><p>Quản lý tài khoản, giải đấu và tình trạng hệ thống.</p></header>
 <p id="admin-status" role="status"></p>

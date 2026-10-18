@@ -1,0 +1,6 @@
+.admin-page{max-width:1100px;margin:32px auto;padding:0 20px}
+.admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.admin-card{background:var(--bg-card);border:1px solid var(--border-card);border-radius:12px;padding:18px;margin:16px 0}
+.admin-stat{font-size:1.8rem;font-weight:800;color:var(--accent)}table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:10px;border-bottom:1px solid var(--border-card)}
+.table-scroll{overflow:auto}#admin-status{min-height:24px;color:var(--danger)}

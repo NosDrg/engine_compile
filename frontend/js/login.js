@@ -5,6 +5,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('login-form');
   const status = document.getElementById('login-status');
   const button = document.getElementById('btn-login');
+  const passwordInput = document.getElementById('login-password');
+  const togglePassword = document.getElementById('toggle-password');
+  togglePassword?.addEventListener('click', () => {
+    const visible = passwordInput.type === 'password';
+    passwordInput.type = visible ? 'text' : 'password';
+    togglePassword.textContent = visible ? '\u1ea8n' : 'Hi\u1ec7n';
+    togglePassword.setAttribute('aria-pressed', String(visible));
+  });
+
   form?.addEventListener('submit', async (event) => {
     event.preventDefault();
     status.textContent = '';

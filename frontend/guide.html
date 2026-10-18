@@ -6,224 +6,18 @@
   <meta name="description" content="Hướng dẫn chơi Bot Arena – Luật, API, ví dụ code bot mẫu.">
   <title>Hướng dẫn – Bot Arena</title>
   <link rel="stylesheet" href="css/main.css">
-  <style>
-    .guide-layout {
-      display: grid;
-      grid-template-columns: 240px 1fr;
-      gap: 32px;
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 48px 32px;
-    }
 
-    /* Sidebar TOC */
-    .toc-sidebar {
-      position: sticky;
-      top: 80px;
-      align-self: start;
-    }
-    .toc-title {
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: var(--text-faint);
-      margin-bottom: 12px;
-    }
-    .toc-list { list-style: none; }
-    .toc-list li { margin-bottom: 2px; }
-    .toc-list a {
-      display: flex; align-items: center; gap: 8px;
-      padding: 7px 12px;
-      border-radius: var(--radius-sm);
-      text-decoration: none;
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      transition: var(--transition);
-      border-left: 2px solid transparent;
-    }
-    .toc-list a:hover, .toc-list a.active {
-      color: var(--accent);
-      background: rgba(129,140,248,0.08);
-      border-left-color: var(--accent);
-    }
-
-    /* Content */
-    .guide-content section {
-      margin-bottom: 56px;
-      scroll-margin-top: 80px;
-    }
-    .guide-content h2 {
-      font-size: 1.6rem;
-      font-weight: 800;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--border-card);
-      display: flex; align-items: center; gap: 10px;
-    }
-    .guide-content h3 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin: 24px 0 12px;
-      color: var(--accent);
-    }
-    .guide-content p {
-      color: var(--text-muted);
-      line-height: 1.8;
-      margin-bottom: 12px;
-    }
-    .guide-content ul, .guide-content ol {
-      padding-left: 20px;
-      color: var(--text-muted);
-      line-height: 2;
-    }
-    .guide-content li { margin-bottom: 4px; }
-    .guide-content strong { color: var(--text-main); }
-
-    /* Code blocks */
-    .code-block {
-      background: #0a0e1a;
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      overflow: hidden;
-      margin: 16px 0;
-    }
-    .code-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 16px;
-      background: rgba(255,255,255,0.03);
-      border-bottom: 1px solid var(--border-card);
-      font-size: 0.78rem;
-    }
-    .code-lang {
-      display: flex; align-items: center; gap: 8px;
-      color: var(--text-muted); font-weight: 600;
-    }
-    .btn-copy {
-      background: none; border: 1px solid var(--border-card);
-      color: var(--text-muted); border-radius: 5px;
-      padding: 4px 10px; cursor: pointer;
-      font-size: 0.75rem; font-family: inherit;
-      transition: var(--transition);
-    }
-    .btn-copy:hover { color: var(--accent); border-color: var(--accent); }
-    .code-block pre {
-      padding: 20px;
-      font-family: 'JetBrains Mono', Consolas, monospace;
-      font-size: 0.82rem;
-      color: #e2e8f0;
-      overflow-x: auto;
-      line-height: 1.7;
-      margin: 0;
-    }
-    .code-block code { font-family: inherit; }
-    .tok-kw  { color: #c084fc; }
-    .tok-fn  { color: #60a5fa; }
-    .tok-str { color: #34d399; }
-    .tok-cm  { color: #4b5563; font-style: italic; }
-    .tok-num { color: #fb923c; }
-
-    /* Info cards */
-    .info-card {
-      background: rgba(129,140,248,0.08);
-      border: 1px solid rgba(129,140,248,0.25);
-      border-radius: var(--radius-md);
-      padding: 16px 20px;
-      margin: 16px 0;
-      font-size: 0.875rem;
-    }
-    .info-card.warning {
-      background: rgba(251,191,36,0.08);
-      border-color: rgba(251,191,36,0.3);
-    }
-    .info-card.success {
-      background: rgba(52,211,153,0.08);
-      border-color: rgba(52,211,153,0.3);
-    }
-    .info-card-title {
-      font-weight: 700; margin-bottom: 6px;
-      display: flex; align-items: center; gap: 6px;
-    }
-
-    /* Board diagram */
-    .board-diagram {
-      display: grid;
-      grid-template-columns: repeat(9, 36px);
-      grid-template-rows: repeat(9, 36px);
-      gap: 2px;
-      background: #0f172a;
-      padding: 8px;
-      border-radius: 10px;
-      border: 1px solid var(--border-card);
-      margin: 16px auto;
-      width: fit-content;
-      font-size: 0.65rem;
-    }
-    .bd-cell {
-      width: 36px; height: 36px;
-      display: flex; align-items: center; justify-content: center;
-      border-radius: 3px;
-      font-size: 0.9rem;
-    }
-    .bd-light { background: #1e293b; }
-    .bd-dark  { background: #0f172a; }
-    .bd-p0    { background: rgba(56,189,248,0.25); border: 1.5px solid #38bdf8; border-radius: 50%; }
-    .bd-p1    { background: rgba(244,63,94,0.25);  border: 1.5px solid #f43f5e; border-radius: 50%; }
-    .bd-goal0 { box-shadow: inset 0 0 0 2px #38bdf8; }
-    .bd-goal1 { box-shadow: inset 0 0 0 2px #f43f5e; }
-
-    /* Guide image */
-    .guide-img {
-      width: 100%;
-      border-radius: 12px;
-      border: 1px solid var(--border-card);
-      margin: 16px 0;
-    }
-
-    /* API table */
-    .api-table th { font-size: 0.75rem; }
-    .api-table td { font-size: 0.82rem; vertical-align: top; }
-    .field-name { font-family: 'JetBrains Mono', monospace; color: #60a5fa; font-size: 0.82rem; }
-    .field-type { font-family: 'JetBrains Mono', monospace; color: #c084fc; font-size: 0.78rem; }
-
-    /* Tabs */
-    .tab-nav {
-      display: flex; gap: 4px;
-      border-bottom: 1px solid var(--border-card);
-      margin-bottom: 0;
-    }
-    .tab-btn {
-      padding: 8px 16px;
-      background: none; border: none;
-      color: var(--text-muted);
-      font-size: 0.875rem; font-weight: 600;
-      cursor: pointer; font-family: inherit;
-      border-bottom: 2px solid transparent;
-      margin-bottom: -1px;
-      transition: var(--transition);
-    }
-    .tab-btn.active, .tab-btn:hover {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
-    }
-    .tab-pane { display: none; }
-    .tab-pane.active { display: block; }
-
-    @media(max-width: 768px) {
-      .guide-layout { grid-template-columns: 1fr; padding: 24px 16px; }
-      .toc-sidebar { display: none; }
-    }
-  </style>
+<link rel="stylesheet" href="css/guide-page.css">
 </head>
-<body>
+<body class="has-navbar">
   <!-- Navbar -->
   <nav class="navbar" id="main-navbar">
-    <a href="index.html" class="navbar-brand"><span class="brand-icon">⚔️</span>Bot Arena</a>
+    <a href="index.html" class="navbar-brand">Bot Arena</a>
     <ul class="navbar-nav">
-      <li><a href="index.html" id="nav-home">🏠 Trang chủ</a></li>
-      <li><a href="arena.html" id="nav-arena">🎮 Thi đấu</a></li>
-      <li><a href="leaderboard.html" id="nav-lb">🏆 Leaderboard</a></li>
-      <li><a href="guide.html" class="active" id="nav-guide">📖 Hướng dẫn</a></li>
+      <li><a href="index.html" id="nav-home"> Trang chủ</a></li>
+      <li><a href="arena.html" id="nav-arena"> Thi đấu</a></li>
+      <li><a href="leaderboard.html" id="nav-lb"> Leaderboard</a></li>
+      <li><a href="guide.html" class="active" id="nav-guide"> Hướng dẫn</a></li>
     </ul>
     <div class="navbar-actions" id="navbar-actions">
       <a href="login.html" class="btn btn-ghost btn-sm">Đăng nhập</a>
@@ -237,15 +31,15 @@
       <aside class="toc-sidebar">
         <div class="toc-title">Nội dung</div>
         <ul class="toc-list" id="toc-list">
-          <li><a href="#intro" class="active" id="toc-intro">🎯 Giới thiệu</a></li>
-          <li><a href="#rules" id="toc-rules">📜 Luật chơi</a></li>
-          <li><a href="#board" id="toc-board">🗺️ Bàn cờ</a></li>
-          <li><a href="#pieces" id="toc-pieces">♟️ Quân cờ</a></li>
-          <li><a href="#win" id="toc-win">🏁 Điều kiện thắng</a></li>
-          <li><a href="#api" id="toc-api">🔌 Giao tiếp API</a></li>
-          <li><a href="#examples" id="toc-examples">💻 Code mẫu</a></li>
-          <li><a href="#submit" id="toc-submit">📤 Nộp bài</a></li>
-          <li><a href="#faq" id="toc-faq">❓ FAQ</a></li>
+          <li><a href="#intro" class="active" id="toc-intro"> Giới thiệu</a></li>
+          <li><a href="#rules" id="toc-rules"> Luật chơi</a></li>
+          <li><a href="#board" id="toc-board"> Bàn cờ</a></li>
+          <li><a href="#pieces" id="toc-pieces"> Quân cờ</a></li>
+          <li><a href="#win" id="toc-win"> Điều kiện thắng</a></li>
+          <li><a href="#api" id="toc-api"> Giao tiếp API</a></li>
+          <li><a href="#examples" id="toc-examples"> Code mẫu</a></li>
+          <li><a href="#submit" id="toc-submit"> Nộp bài</a></li>
+          <li><a href="#faq" id="toc-faq"> FAQ</a></li>
         </ul>
       </aside>
 
@@ -253,7 +47,7 @@
       <div class="guide-content">
 
         <section id="intro">
-          <h2>🎯 Giới thiệu</h2>
+          <h2> Giới thiệu</h2>
           <img src="assets/guide_banner.jpg" alt="Game guide banner" class="guide-img">
           <p>
             <strong>Bot Arena</strong> là đấu trường AI nơi bạn viết thuật toán điều khiển quân cờ trên lưới 9×9.
@@ -261,14 +55,14 @@
             hoặc <strong>Kéo (Scissors)</strong> — tuân theo luật Kéo-Búa-Bao kinh điển.
           </p>
           <div class="info-card">
-            <div class="info-card-title">🤖 Mục tiêu</div>
+            <div class="info-card-title"> Mục tiêu</div>
             Bot của bạn nhận trạng thái bàn cờ hiện tại và trả về nước đi tiếp theo. Engine sẽ thực thi,
             kiểm tra hợp lệ và cập nhật trạng thái game sau mỗi lượt.
           </div>
         </section>
 
         <section id="rules">
-          <h2>📜 Luật chơi</h2>
+          <h2> Luật chơi</h2>
           <h3>Lượt thi đấu</h3>
           <ul>
             <li>Hai bot <strong>thay phiên nhau</strong> di chuyển. Player 0 (Xanh) đi trước.</li>
@@ -285,39 +79,36 @@
         </section>
 
         <section id="board">
-          <h2>🗺️ Bàn cờ</h2>
+          <h2> Bàn cờ</h2>
           <p>Lưới <strong>9×9</strong> ô. Tọa độ <code>(x, y)</code> với <code>(0,0)</code> ở góc trên trái, <code>(8,8)</code> ở góc dưới phải.</p>
           <div class="info-card">
-            <div class="info-card-title">📌 Vị trí đặc biệt</div>
+            <div class="info-card-title"> Vị trí đặc biệt</div>
             <strong>A1 (0,0)</strong> là căn cứ của Player 1 (Đỏ) — mục tiêu Player 0 cần chiếm.<br>
             <strong>I9 (8,8)</strong> là căn cứ của Player 0 (Xanh) — mục tiêu Player 1 cần chiếm.
           </div>
         </section>
 
         <section id="pieces">
-          <h2>♟️ Quân cờ</h2>
+          <h2> Quân cờ</h2>
           <p>Mỗi player bắt đầu với <strong>9 quân</strong> (3 Búa + 3 Bao + 3 Kéo), đặt theo đội hình ban đầu.</p>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0;">
+          <div class="move-types-grid">
             <div class="stat-card">
-              <div style="font-size:2rem;margin-bottom:8px;">🪨</div>
-              <div style="font-weight:700;margin-bottom:4px;">Búa (Rock)</div>
+              <div class="move-name">Búa (Rock)</div>
               <div class="stat-label">Thắng Kéo · Thua Bao</div>
             </div>
             <div class="stat-card">
-              <div style="font-size:2rem;margin-bottom:8px;">📄</div>
-              <div style="font-weight:700;margin-bottom:4px;">Bao (Paper)</div>
+              <div class="move-name">Bao (Paper)</div>
               <div class="stat-label">Thắng Búa · Thua Kéo</div>
             </div>
             <div class="stat-card">
-              <div style="font-size:2rem;margin-bottom:8px;">✂️</div>
-              <div style="font-weight:700;margin-bottom:4px;">Kéo (Scissors)</div>
+              <div class="move-name">Kéo (Scissors)</div>
               <div class="stat-label">Thắng Bao · Thua Búa</div>
             </div>
           </div>
         </section>
 
         <section id="win">
-          <h2>🏁 Điều kiện thắng</h2>
+          <h2> Điều kiện thắng</h2>
           <p>Trận đấu kết thúc khi một trong các điều kiện sau xảy ra:</p>
           <ol>
             <li><strong>Chiếm căn cứ:</strong> Quân của bạn chiếm được ô A1 (nếu là P0) hoặc I9 (nếu là P1).</li>
@@ -328,7 +119,7 @@
         </section>
 
         <section id="api">
-          <h2>🔌 Giao tiếp API</h2>
+          <h2> Giao tiếp API</h2>
           <p>Bot của bạn nhận input từ <strong>stdin</strong> và gửi output ra <strong>stdout</strong> theo định dạng JSON.</p>
 
           <h3>Input (nhận từ engine)</h3>
@@ -416,17 +207,17 @@
         </section>
 
         <section id="examples">
-          <h2>💻 Code mẫu</h2>
+          <h2> Code mẫu</h2>
           <p>Dưới đây là các template bot cơ bản để bạn bắt đầu. Chọn ngôn ngữ của bạn:</p>
 
           <div class="code-block">
             <div class="code-header">
               <div class="tab-nav" id="example-tabs">
-                <button class="tab-btn active" data-tab="python" id="tab-python">🐍 Python</button>
-                <button class="tab-btn" data-tab="cpp" id="tab-cpp">⚙️ C++</button>
-                <button class="tab-btn" data-tab="java" id="tab-java">☕ Java</button>
+                <button class="tab-btn active" data-tab="python" id="tab-python"> Python</button>
+                <button class="tab-btn" data-tab="cpp" id="tab-cpp"> C++</button>
+                <button class="tab-btn" data-tab="java" id="tab-java"> Java</button>
               </div>
-              <button class="btn-copy" id="btn-copy-example">📋 Copy</button>
+              <button class="btn-copy" id="btn-copy-example"> Copy</button>
             </div>
 
             <div class="tab-pane active" id="pane-python">
@@ -436,7 +227,7 @@
 <span class="tok-kw">def</span> <span class="tok-fn">get_move</span>(state):
     board = state[<span class="tok-str">'board'</span>]
     my_player = state[<span class="tok-str">'my_player'</span>]
-    
+
     <span class="tok-cm"># Thu thập tất cả quân của mình</span>
     my_pieces = []
     <span class="tok-kw">for</span> y <span class="tok-kw">in</span> range(<span class="tok-num">9</span>):
@@ -444,11 +235,11 @@
             cell = board[y][x]
             <span class="tok-kw">if</span> cell <span class="tok-kw">and</span> cell[<span class="tok-str">'owner'</span>] == my_player:
                 my_pieces.append((x, y))
-    
+
     <span class="tok-cm"># Chọn ngẫu nhiên một quân và một hướng hợp lệ</span>
     random.shuffle(my_pieces)
     directions = [(-1,-1),(0,-1),(1,-1),(-1,0),(1,0),(-1,1),(0,1),(1,1)]
-    
+
     <span class="tok-kw">for</span> (fx, fy) <span class="tok-kw">in</span> my_pieces:
         <span class="tok-kw">for</span> (dx, dy) <span class="tok-kw">in</span> directions:
             tx, ty = fx + dx, fy + dy
@@ -457,7 +248,7 @@
                 <span class="tok-cm"># Không đi vào ô của chính mình</span>
                 <span class="tok-kw">if not</span> target <span class="tok-kw">or</span> target[<span class="tok-str">'owner'</span>] != my_player:
                     <span class="tok-kw">return</span> {<span class="tok-str">'from_x'</span>: fx, <span class="tok-str">'from_y'</span>: fy, <span class="tok-str">'to_x'</span>: tx, <span class="tok-str">'to_y'</span>: ty}
-    
+
     <span class="tok-kw">return</span> <span class="tok-kw">None</span>  <span class="tok-cm"># Không có nước đi hợp lệ</span>
 
 <span class="tok-kw">if</span> __name__ == <span class="tok-str">'__main__'</span>:
@@ -477,13 +268,13 @@
 <span class="tok-kw">int</span> <span class="tok-fn">main</span>() {
     json state;
     cin &gt;&gt; state;
-    
+
     <span class="tok-kw">auto</span> board = state[<span class="tok-str">"board"</span>];
     <span class="tok-kw">int</span> my_player = state[<span class="tok-str">"my_player"</span>];
-    
+
     <span class="tok-kw">int</span> dx[] = {-<span class="tok-num">1</span>,<span class="tok-num">0</span>,<span class="tok-num">1</span>,-<span class="tok-num">1</span>,<span class="tok-num">1</span>,-<span class="tok-num">1</span>,<span class="tok-num">0</span>,<span class="tok-num">1</span>};
     <span class="tok-kw">int</span> dy[] = {-<span class="tok-num">1</span>,-<span class="tok-num">1</span>,-<span class="tok-num">1</span>,<span class="tok-num">0</span>,<span class="tok-num">0</span>,<span class="tok-num">1</span>,<span class="tok-num">1</span>,<span class="tok-num">1</span>};
-    
+
     <span class="tok-kw">for</span> (<span class="tok-kw">int</span> y = <span class="tok-num">0</span>; y &lt; <span class="tok-num">9</span>; y++) {
         <span class="tok-kw">for</span> (<span class="tok-kw">int</span> x = <span class="tok-num">0</span>; x &lt; <span class="tok-num">9</span>; x++) {
             <span class="tok-kw">if</span> (!board[y][x].is_null() &amp;&amp; board[y][x][<span class="tok-str">"owner"</span>] == my_player) {
@@ -519,10 +310,10 @@
         JSONObject state = <span class="tok-kw">new</span> JSONObject(sc.nextLine());
         JSONArray board = state.getJSONArray(<span class="tok-str">"board"</span>);
         <span class="tok-kw">int</span> myPlayer = state.getInt(<span class="tok-str">"my_player"</span>);
-        
+
         <span class="tok-kw">int</span>[] dx = {-<span class="tok-num">1</span>,<span class="tok-num">0</span>,<span class="tok-num">1</span>,-<span class="tok-num">1</span>,<span class="tok-num">1</span>,-<span class="tok-num">1</span>,<span class="tok-num">0</span>,<span class="tok-num">1</span>};
         <span class="tok-kw">int</span>[] dy = {-<span class="tok-num">1</span>,-<span class="tok-num">1</span>,-<span class="tok-num">1</span>,<span class="tok-num">0</span>,<span class="tok-num">0</span>,<span class="tok-num">1</span>,<span class="tok-num">1</span>,<span class="tok-num">1</span>};
-        
+
         <span class="tok-kw">for</span> (<span class="tok-kw">int</span> y = <span class="tok-num">0</span>; y &lt; <span class="tok-num">9</span>; y++) {
             JSONArray row = board.getJSONArray(y);
             <span class="tok-kw">for</span> (<span class="tok-kw">int</span> x = <span class="tok-num">0</span>; x &lt; <span class="tok-num">9</span>; x++) {
@@ -553,9 +344,9 @@
         </section>
 
         <section id="submit">
-          <h2>📤 Nộp bài</h2>
+          <h2> Nộp bài</h2>
           <ol>
-            <li>Truy cập trang <a href="arena.html" style="color:var(--accent);">🎮 Thi đấu</a></li>
+            <li>Truy cập trang <a href="arena.html" class="guide-inline-link">Thi đấu</a></li>
             <li>Nhập <strong>tên đăng nhập</strong> của bạn vào ô "Tên thí sinh"</li>
             <li>Chọn <strong>ngôn ngữ</strong> (Python / C++ / Java)</li>
             <li>Dán <strong>mã nguồn</strong> của bot vào ô code</li>
@@ -564,14 +355,14 @@
             <li>Chọn đối thủ từ danh sách → <strong>"Bắt Đầu Thách Đấu"</strong></li>
           </ol>
           <div class="info-card warning">
-            <div class="info-card-title">⚠️ Lưu ý</div>
+            <div class="info-card-title"> Lưu ý</div>
             Mỗi lần nộp sẽ <strong>ghi đè</strong> bot cũ của bạn trong hệ thống.
             Đảm bảo bot mới đã được kiểm tra trước khi nộp chính thức.
           </div>
         </section>
 
         <section id="faq">
-          <h2>❓ Câu hỏi thường gặp</h2>
+          <h2> Câu hỏi thường gặp</h2>
           <h3>Bot của tôi bị timeout có nghĩa là gì?</h3>
           <p>Engine giới hạn mỗi lượt 500ms. Nếu bot không trả về output trong thời gian đó, engine sẽ xem đó là lượt "bỏ qua" và đối thủ được thêm điểm.</p>
           <h3>Tôi có thể import thư viện ngoài không?</h3>

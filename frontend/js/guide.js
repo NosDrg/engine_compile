@@ -23,12 +23,12 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       await navigator.clipboard.writeText(code);
       const btn = document.getElementById('btn-copy-example');
-      btn.textContent = '✅ Đã copy!';
-      setTimeout(() => { btn.textContent = '📋 Copy'; }, 2000);
+      btn.textContent = 'Đã copy!';
+      setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
     } catch (_) {
       const btn = document.getElementById('btn-copy-example');
-      btn.textContent = '❌ Thất bại';
-      setTimeout(() => { btn.textContent = '📋 Copy'; }, 2000);
+      btn.textContent = 'Không thể copy';
+      setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
     }
   });
 

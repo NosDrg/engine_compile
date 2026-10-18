@@ -1,8 +1,7 @@
-/* frontend/css/main.css — Global Design System */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
-
+/* frontend/css/main.css
 /* ─── CSS Variables ─────────────────────────────────── */
 :root {
+  --navbar-height: 68px;
   --bg-main:       #080c14;
   --bg-card:       rgba(14, 20, 36, 0.88);
   --bg-glass:      rgba(255,255,255,0.04);
@@ -38,12 +37,12 @@
 html { scroll-behavior: smooth; }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 18px;
   background: var(--bg-main);
   color: var(--text-main);
   min-height: 100vh;
   line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
 }
 
 /* Animated starfield background */
@@ -66,14 +65,18 @@ body::before {
 
 /* ─── Navbar ─────────────────────────────────────────── */
 .navbar {
-  position: sticky; top: 0; z-index: 100;
+  position: fixed; inset: 0 0 auto; z-index: 100;
   display: flex; align-items: center;
   padding: 0 32px;
-  height: 62px;
-  background: rgba(8,12,20,0.85);
+  width: 100%;
+  min-height: var(--navbar-height);
+  background: #080c14;
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-card);
 }
+
+.has-navbar { padding-top: var(--navbar-height); }
+.legal-content { max-width: 850px; margin: 48px auto; padding: 24px; }
 
 .navbar-brand {
   display: flex; align-items: center; gap: 10px;
@@ -87,16 +90,6 @@ body::before {
   flex-shrink: 0;
 }
 
-.navbar-brand .brand-icon {
-  width: 32px; height: 32px;
-  background: linear-gradient(135deg, #4f46e5, #06b6d4);
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.1rem;
-  flex-shrink: 0;
-  -webkit-text-fill-color: white;
-}
-
 .navbar-nav {
   display: flex; align-items: center; gap: 4px;
   list-style: none;
@@ -107,7 +100,7 @@ body::before {
 .navbar-nav a {
   text-decoration: none;
   color: var(--text-muted);
-  font-size: 0.875rem;
+  font-size: calc(1em + 2px);
   font-weight: 500;
   padding: 6px 12px;
   border-radius: var(--radius-sm);
@@ -126,6 +119,11 @@ body::before {
 .navbar-actions {
   margin-left: auto;
   display: flex; align-items: center; gap: 10px;
+}
+
+.navbar-actions .btn,
+.navbar-actions .nav-user {
+  font-size: calc(1em + 2px);
 }
 
 /* ─── Buttons ────────────────────────────────────────── */
@@ -244,7 +242,6 @@ textarea.form-control {
 select.form-control {
   cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2394a3b8' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 36px;
@@ -314,7 +311,7 @@ select.form-control {
 /* ─── Page wrapper ───────────────────────────────────── */
 .page-wrapper {
   position: relative; z-index: 1;
-  min-height: calc(100vh - 62px);
+  min-height: calc(100vh - var(--navbar-height));
 }
 
 /* ─── Section headers ────────────────────────────────── */
@@ -414,7 +411,6 @@ tr:last-child td { border-bottom: none; }
 }
 .toast.toast-success { border-color: rgba(52,211,153,0.4); }
 .toast.toast-error   { border-color: rgba(248,113,113,0.4); }
-.toast .toast-icon   { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
 .toast .toast-title  { font-weight: 600; margin-bottom: 2px; }
 .toast .toast-msg    { color: var(--text-muted); font-size: 0.8rem; }
 @keyframes slideIn {
@@ -466,6 +462,32 @@ tr:last-child td { border-bottom: none; }
 
 /* ─── Responsive ─────────────────────────────────────── */
 @media (max-width: 768px) {
-  .navbar { padding: 0 16px; }
-  .navbar-nav { display: none; }
+  .navbar { padding: 8px 16px; gap: 12px; }
+  .navbar-nav {
+    margin-left: 4px;
+    max-width: 32vw;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+  .navbar-nav a { padding: 6px 8px; }
+  .navbar-brand { font-size: 1.1rem; }
+  .navbar-actions {
+    max-width: 38vw;
+    overflow-x: auto;
+    gap: 8px;
+    scrollbar-width: thin;
+  }
+  .navbar-actions .btn,
+  .navbar-actions .nav-user { font-size: 20px; }
+}
+
+@media (max-width: 480px) {
+  :root { --navbar-height: 64px; }
+  .navbar { padding: 8px 12px; gap: 8px; }
+  .navbar-brand { font-size: 1rem; }
+  .navbar-nav { max-width: 24vw; }
+  .navbar-nav a { font-size: 20px; padding: 6px; }
+  .navbar-actions { max-width: 38vw; }
+  .navbar-actions .btn { padding: 6px 9px; }
 }

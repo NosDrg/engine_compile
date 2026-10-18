@@ -1,4 +1,4 @@
-// js/submission.js
+// frontend/js/submission.js
 import { api } from './api.js';
 
 export class SubmissionHandler {
@@ -7,20 +7,24 @@ export class SubmissionHandler {
   }
 
   initEvents() {
-    document.getElementById('btn-validate-bot0').addEventListener('click', () => {
+    document.getElementById('btn-validate-bot0')?.addEventListener('click', () => {
       this.handleValidate(0);
     });
 
-    document.getElementById('btn-validate-bot1').addEventListener('click', () => {
+    document.getElementById('btn-validate-bot1')?.addEventListener('click', () => {
       this.handleValidate(1);
     });
   }
 
   getBotData(playerIndex) {
+    const idEl = document.getElementById(`bot${playerIndex}-id`);
+    const langEl = document.getElementById(`bot${playerIndex}-lang`);
+    const codeEl = document.getElementById(`bot${playerIndex}-code`);
+
     return {
-      sub_id: document.getElementById(`bot${playerIndex}-id`).value.trim(),
-      lang_str: document.getElementById(`bot${playerIndex}-lang`).value,
-      code: document.getElementById(`bot${playerIndex}-code`).value
+      sub_id: idEl ? idEl.value.trim() : `bot_${playerIndex}`,
+      lang_str: langEl ? langEl.value : 'python',
+      code: codeEl ? codeEl.value : ''
     };
   }
 
@@ -28,7 +32,9 @@ export class SubmissionHandler {
     const statusEl = document.getElementById(`bot${playerIndex}-status`);
     const bot = this.getBotData(playerIndex);
 
-    if (!bot.code) {
+    if (!statusEl) return;
+
+    if (!bot.code.trim()) {
       statusEl.textContent = 'Vui lòng nhập code trước khi kiểm tra!';
       statusEl.className = 'status-msg error';
       return;
@@ -37,12 +43,18 @@ export class SubmissionHandler {
     statusEl.textContent = 'Đang nộp và kiểm tra biên dịch...';
     statusEl.className = 'status-msg';
 
-    const res = await api.validateCode(bot.sub_id, bot.code, bot.lang_str);
-    if (res.success) {
-      statusEl.textContent = '✓ ' + (res.message || 'Mã nguồn hợp lệ!');
-      statusEl.className = 'status-msg success';
-    } else {
-      statusEl.textContent = `✗ ${res.message}`;
+    try {
+      // SỬA LỖI: api.validateCode nhận (sourceCode, language)
+      const res = await api.validateCode(bot.code, bot.lang_str);
+      if (res.success) {
+        statusEl.textContent = res.message || 'Mã nguồn hợp lệ!';
+        statusEl.className = 'status-msg success';
+      } else {
+        statusEl.textContent = res.error || res.message || 'Mã nguồn không hợp lệ.';
+        statusEl.className = 'status-msg error';
+      }
+    } catch (err) {
+      statusEl.textContent = err.message || 'Không thể kết nối máy chủ.';
       statusEl.className = 'status-msg error';
     }
   }

@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     historyHost.innerHTML = historyData.history.length ? historyData.history.map((item) =>
       '<div class="version-row"><span>' + escapeHtml(item.mission_key) + ' · +' + Number(item.points) + ' điểm</span><small>' + escapeHtml(item.created_at) + '</small></div>'
     ).join('') : '<p>Chưa có điểm thưởng được ghi nhận.</p>';
-    document.getElementById('missions').innerHTML = data.missions.map((m) => '<article class="mission"><strong>' + escapeHtml(m.title) + '</strong><p>Tiến độ: ' + m.progress + '/' + m.target + ' · Thưởng: +' + m.reward + ' điểm</p>' + (m.done ? '<span>Đã nhận thưởng ✓</span>' : m.key === 'check_in' ? '<button class="btn btn-primary" id="check-in">Điểm danh</button>' : '<span>Tiến độ tự cập nhật khi bạn hoạt động.</span>') + '</article>').join('');
+    document.getElementById('missions').innerHTML = data.missions.map((m) => '<article class="mission"><strong>' + escapeHtml(m.title) + '</strong><p>Tiến độ: ' + m.progress + '/' + m.target + ' · Thưởng: +' + m.reward + ' điểm</p>' + (m.done ? '<span>Đã nhận thưởng</span>' : m.key === 'check_in' ? '<button class="btn btn-primary" id="check-in">Điểm danh</button>' : '<span>Tiến độ tự cập nhật khi bạn hoạt động.</span>') + '</article>').join('');
     document.getElementById('check-in')?.addEventListener('click', async () => { try { const result = await api.checkIn(); status.textContent = result.already_done ? 'Bạn đã điểm danh hôm nay.' : 'Điểm danh thành công, nhận điểm thưởng!'; await load(); } catch (e) { status.textContent = e.message; } });
   }
   try { await load(); } catch (e) { status.textContent = e.message; }
