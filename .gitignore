@@ -1,9 +1,4 @@
 .submissions
-
-# Rust build artifacts
-/target/
-
-# Python bytecode and caches
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -14,3 +9,14 @@ venv/
 .vscode/
 main.rs
 *.db
+target/
+workspace/
+__pycache__/
+*.pyc
+protocol/__pycache__/
+protocol/*/__pycache__/
+protocol/*.db
+protocol/*.db-journal
+protocol/save/*.db
+protocol/save/*.db-journal
+.git/

@@ -1,34 +1,64 @@
-# ----------------- STAGE 1: Build Rust Engine -----------------
-FROM rust:latest AS builder
+# ==========================================
+# GIAI ĐOẠN 1: Biên dịch Rust Engine
+# ==========================================
+# Thay rust:1.80-slim bằng rust:slim (tự động lấy phiên bản Rust mới nhất)
+FROM rust:slim AS builder
 
-WORKDIR /app
+WORKDIR /usr/src/engine
+
+# Cài đặt các công cụ C cần thiết cho build script
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy file cấu hình Cargo và mã nguồn Rust
 COPY Cargo.toml Cargo.lock ./
-COPY src ./src
+COPY src/ ./src/
 
 # Biên dịch binary release
 RUN cargo build --release
 
-# ----------------- STAGE 2: Runtime Environment -----------------
+# ==========================================
+# GIAI ĐOẠN 2: Môi trường chạy FastAPI & Sandbox
+# ==========================================
 FROM python:3.11-slim
 
+# Cài đặt môi trường runtime cho các bot
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     g++ \
-    default-jdk-headless \
+    default-jre-headless \
+    procps \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY --from=builder /app/target/release/match_runner_engine ./target/release/match_runner_engine
+# Cài đặt các gói Python
+RUN pip install --no-cache-dir \
+    fastapi \
+    "uvicorn[standard]" \
+    pydantic \
+    psutil
 
-COPY protocol ./protocol
-COPY frontend ./frontend
-COPY drivers ./drivers
+# Copy Rust Engine binary từ Giai đoạn 1
+COPY --from=builder /usr/src/engine/target/release/match_runner_engine /app/target/release/match_runner_engine
+RUN chmod +x /app/target/release/match_runner_engine
 
-RUN pip install --no-cache-dir fastapi uvicorn pydantic
+# Tạo các thư mục cần thiết
+RUN mkdir -p /app/workspace /app/drivers /app/frontend
 
-RUN mkdir -p /app/workspace
+# Copy mã nguồn backend, frontend và drivers
+COPY protocol/ /app/protocol/
+COPY frontend/ /app/frontend/
+COPY drivers/ /app/drivers/
+
+ENV PYTHONPATH=/app/protocol
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app/protocol
 
 EXPOSE 8000
 
-WORKDIR /app/protocol
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]

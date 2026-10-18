@@ -3,15 +3,27 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: match_arena_dev
+    image: match-arena:latest
+    container_name: match_arena_app
+    restart: unless-stopped
     ports:
       - "8000:8000"
-    volumes:
-      # Mount trực tiếp code để khi sửa file Python/JS thì hệ thống tự cập nhật ngay
-      - ./protocol:/app/protocol
-      - ./frontend:/app/frontend
-      - ./drivers:/app/drivers
-      - ./workspace:/app/workspace
     environment:
       - PYTHONUNBUFFERED=1
-    command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+      - PYTHONPATH=/app/protocol
+    volumes:
+      # 1. Mount database để giữ lại dữ liệu tài khoản, submission, match history
+      - ./protocol/save/match_arena.db:/app/protocol/save/match_arena.db
+
+      # 2. Mount thư mục frontend để khi bạn sửa JS/CSS/HTML ở máy host, web tự nhận ngay
+      - ./frontend:/app/frontend:ro
+
+      # 3. Mount workspace để kiểm tra code tạm của bot khi cần debug
+      - ./workspace:/app/workspace
+
+    # Tùy chọn: Đảm bảo container nhìn thấy đủ CPU cores để CoreAllocator phân chia luồng
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 4G
