@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quản trị · Bot Arena</title><link rel="stylesheet" href="../css/main.css">
+<style>
+.admin-page{max-width:1100px;margin:32px auto;padding:0 20px}.admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}.admin-card{background:var(--bg-card);border:1px solid var(--border-card);border-radius:12px;padding:18px;margin:16px 0}.admin-stat{font-size:1.8rem;font-weight:800;color:var(--accent)}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--border-card)}.table-scroll{overflow:auto}#admin-status{min-height:24px;color:var(--danger)}
+</style>
+</head>
+<body>
+<nav class="navbar"><a class="navbar-brand" href="/index.html">⚔️ Bot Arena · Quản trị</a><div class="navbar-actions" id="navbar-actions"></div></nav>
+<main class="admin-page">
+<header><h1>Trang quản trị</h1><p>Quản lý tài khoản, giải đấu và tình trạng hệ thống.</p></header>
+<p id="admin-status" role="status"></p>
+<section class="admin-grid" id="admin-overview"></section>
+<section class="admin-card"><h2>Tài nguyên máy chủ</h2><p id="admin-system">Đang đọc số liệu…</p></section>
+<section class="admin-card"><h2>Tài khoản</h2><div class="table-scroll"><table><thead><tr><th>Người chơi</th><th>Vai trò</th><th>Rating</th><th>Thành tích</th><th>Thao tác</th></tr></thead><tbody id="admin-users"></tbody></table></div></section>
+<section class="admin-card"><h2>Phiên bản bot đã nộp</h2><div class="table-scroll"><table><thead><tr><th>Chủ tài khoản</th><th>Phiên bản</th><th>Ngôn ngữ</th><th>Trạng thái</th><th>Ngày nộp</th><th></th></tr></thead><tbody id="admin-submissions"></tbody></table></div></section>
+<section class="admin-card"><h2>Kiểm duyệt diễn đàn</h2><div id="admin-forum"></div></section>
+<section class="admin-card"><h2>Tạo giải đấu</h2><form id="tournament-form"><div class="form-group"><label for="tour-name">Tên giải</label><input class="form-control" id="tour-name" maxlength="100" required></div><div class="form-group"><label for="tour-description">Mô tả</label><textarea class="form-control" id="tour-description" maxlength="2000"></textarea></div><div class="form-group"><label for="tour-format">Thể thức</label><select class="form-control" id="tour-format"><option value="single_elimination">Loại trực tiếp</option><option value="round_robin">Vòng tròn</option></select></div><div class="form-group"><label for="tour-map">Bản đồ</label><select class="form-control" id="tour-map"><option value="classic">Classic</option><option value="frontline">Frontline</option><option value="deep">Deep</option></select></div><div class="form-group"><label for="tour-start">Lịch bắt đầu (tuỳ chọn)</label><input class="form-control" id="tour-start" type="datetime-local"></div><button class="btn btn-primary" type="submit">Tạo giải</button></form></section>
+<section class="admin-card"><h2>Giải đấu</h2><div id="admin-tournaments"></div></section>
+</main>
+<script type="module" src="../js/admin.js"></script>
+</body></html>

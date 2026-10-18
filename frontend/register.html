@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Đăng ký tài khoản Bot Arena – Đấu trường AI miễn phí.">
+  <title>Đăng ký – Bot Arena</title>
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    .auth-wrapper {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 40px 16px;
+      position: relative; z-index: 1;
+    }
+    .auth-card {
+      width: 100%; max-width: 460px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 20px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+      overflow: hidden;
+      animation: fadeIn 0.4s ease;
+    }
+    .auth-header {
+      padding: 36px 36px 24px;
+      text-align: center;
+      border-bottom: 1px solid var(--border-card);
+    }
+    .auth-logo {
+      width: 56px; height: 56px;
+      background: linear-gradient(135deg, #4f46e5, #06b6d4);
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem;
+      margin: 0 auto 16px;
+    }
+    .auth-header h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 6px; }
+    .auth-header p  { font-size: 0.875rem; color: var(--text-muted); }
+    .auth-body  { padding: 28px 36px; }
+    .auth-footer {
+      padding: 18px 36px;
+      text-align: center;
+      border-top: 1px solid var(--border-card);
+      font-size: 0.875rem; color: var(--text-muted);
+    }
+    .auth-footer a { color: var(--accent); text-decoration: none; font-weight: 500; }
+    .auth-footer a:hover { text-decoration: underline; }
+
+    .input-icon-wrap { position: relative; }
+    .input-icon-wrap .icon {
+      position: absolute; left: 12px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-faint); pointer-events: none;
+    }
+    .input-icon-wrap .form-control { padding-left: 38px; }
+    .input-icon-wrap .btn-eye {
+      position: absolute; right: 8px; top: 50%;
+      transform: translateY(-50%);
+      background: none; border: none;
+      color: var(--text-faint); cursor: pointer;
+      padding: 4px; font-size: 1rem;
+    }
+
+    .password-strength {
+      margin-top: 8px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .strength-bar {
+      flex: 1; height: 4px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .strength-fill {
+      height: 100%; width: 0;
+      border-radius: 2px;
+      transition: width 0.3s, background 0.3s;
+    }
+    .strength-label { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
+
+    .lang-select-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .lang-option {
+      display: none;
+    }
+    .lang-label {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 12px 8px;
+      border-radius: 10px;
+      border: 2px solid var(--border-card);
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .lang-label .lang-emoji { font-size: 1.6rem; }
+    .lang-option:checked + .lang-label {
+      border-color: var(--accent);
+      background: rgba(129,140,248,0.12);
+      color: var(--accent);
+    }
+    .lang-label:hover { border-color: rgba(255,255,255,0.2); color: var(--text-main); }
+
+    #reg-status { margin-bottom: 16px; }
+
+    .terms-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      margin-bottom: 20px;
+      font-size: 0.82rem; color: var(--text-muted);
+    }
+    .terms-row a { color: var(--accent); text-decoration: none; }
+    .terms-row input { margin-top: 2px; }
+
+    .back-home {
+      position: absolute; z-index: 2; top: 20px; left: 24px;
+      display: flex; align-items: center; gap: 6px;
+      color: var(--text-muted); text-decoration: none;
+      font-size: 0.85rem; font-weight: 500;
+    }
+    .back-home:hover { color: var(--text-main); }
+  </style>
+</head>
+<body>
+  <a href="/index.html" class="back-home" id="back-to-home">← Trang chủ</a>
+
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-logo">🚀</div>
+        <h1>Tạo tài khoản</h1>
+        <p>Đăng ký miễn phí, bắt đầu lập trình AI ngay</p>
+      </div>
+
+      <div class="auth-body">
+        <div id="reg-status"></div>
+
+        <form id="register-form" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="reg-username">Tên người dùng *</label>
+            <div class="input-icon-wrap">
+              <span class="icon">👤</span>
+              <input type="text" id="reg-username" class="form-control"
+                placeholder="chỉ chữ cái, số, gạch dưới"
+                maxlength="32" required autocomplete="username">
+            </div>
+            <small id="reg-username-hint" style="font-size:0.75rem;color:var(--text-faint);margin-top:4px;display:block;"></small>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="reg-display">Tên hiển thị</label>
+            <div class="input-icon-wrap">
+              <span class="icon">✏️</span>
+              <input type="text" id="reg-display" class="form-control"
+                placeholder="Tên bạn muốn hiển thị" maxlength="64">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="reg-password">Mật khẩu *</label>
+            <div class="input-icon-wrap">
+              <span class="icon">🔒</span>
+              <input type="password" id="reg-password" class="form-control"
+                placeholder="Ít nhất 12 ký tự" required autocomplete="new-password">
+              <button type="button" class="btn-eye" id="toggle-pwd1">👁️</button>
+            </div>
+            <div class="password-strength">
+              <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+              <span class="strength-label" id="strength-label">Nhập mật khẩu</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="reg-confirm">Xác nhận mật khẩu *</label>
+            <div class="input-icon-wrap">
+              <span class="icon">🔒</span>
+              <input type="password" id="reg-confirm" class="form-control"
+                placeholder="Nhập lại mật khẩu" required autocomplete="new-password">
+              <button type="button" class="btn-eye" id="toggle-pwd2">👁️</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Ngôn ngữ lập trình yêu thích</label>
+            <div class="lang-select-grid">
+              <div>
+                <input type="radio" name="preferred_lang" id="lang-python" value="python" class="lang-option" checked>
+                <label for="lang-python" class="lang-label">
+                  <span class="lang-emoji">🐍</span>Python
+                </label>
+              </div>
+              <div>
+                <input type="radio" name="preferred_lang" id="lang-cpp" value="cpp" class="lang-option">
+                <label for="lang-cpp" class="lang-label">
+                  <span class="lang-emoji">⚙️</span>C++
+                </label>
+              </div>
+              <div>
+                <input type="radio" name="preferred_lang" id="lang-java" value="java" class="lang-option">
+                <label for="lang-java" class="lang-label">
+                  <span class="lang-emoji">☕</span>Java
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="terms-row">
+            <input type="checkbox" id="agree-terms" required>
+            <label for="agree-terms">
+              Tôi đồng ý với <a href="terms.html" id="terms-link">Điều khoản sử dụng</a> và
+              <a href="privacy.html" id="privacy-link">Chính sách bảo mật</a>
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block btn-lg" id="btn-register">
+            🚀 Tạo tài khoản
+          </button>
+        </form>
+      </div>
+
+      <div class="auth-footer">
+        Đã có tài khoản? <a href="login.html" id="link-to-login">Đăng nhập</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+  <script type="module" src="js/register.js"></script>
+</body>
+</html>

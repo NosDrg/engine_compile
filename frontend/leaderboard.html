@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Bảng xếp hạng Bot Arena – Top các thí sinh xuất sắc nhất.">
+  <title>Leaderboard – Bot Arena</title>
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    .lb-page { padding: 48px 32px; max-width: 1000px; margin: 0 auto; }
+
+    /* Podium top 3 */
+    .podium {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+    .podium-item {
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center;
+      flex: 1; max-width: 220px;
+    }
+    .podium-avatar-wrap { position: relative; margin-bottom: 12px; }
+    .podium-avatar {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--border-card);
+    }
+    .podium-item.rank-1 .podium-avatar { width: 88px; height: 88px; border-color: #fbbf24; box-shadow: 0 0 20px rgba(251,191,36,0.4); }
+    .podium-item.rank-2 .podium-avatar { border-color: #94a3b8; }
+    .podium-item.rank-3 .podium-avatar { border-color: #cd7c3a; }
+    .podium-crown {
+      position: absolute; top: -20px; left: 50%;
+      transform: translateX(-50%);
+      font-size: 1.4rem;
+    }
+    .podium-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+    .podium-score { color: var(--accent); font-weight: 800; font-size: 1rem; }
+    .podium-lang { }
+    .podium-stand {
+      width: 100%;
+      border-radius: 8px 8px 0 0;
+      margin-top: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; font-weight: 800; color: #fff;
+    }
+    .rank-1 .podium-stand { background: linear-gradient(180deg,#fbbf24,#d97706); height: 80px; }
+    .rank-2 .podium-stand { background: linear-gradient(180deg,#94a3b8,#64748b); height: 60px; }
+    .rank-3 .podium-stand { background: linear-gradient(180deg,#cd7c3a,#92400e); height: 48px; }
+
+    /* Filters */
+    .lb-filters {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .lb-search {
+      flex: 1; min-width: 220px;
+      position: relative;
+    }
+    .lb-search .icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-faint); pointer-events: none; }
+    .lb-search input { padding-left: 36px; }
+    .filter-tab {
+      padding: 7px 16px;
+      border-radius: 99px;
+      border: 1px solid var(--border-card);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.82rem; font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      font-family: inherit;
+    }
+    .filter-tab.active, .filter-tab:hover {
+      background: rgba(129,140,248,0.15);
+      border-color: rgba(129,140,248,0.4);
+      color: var(--accent);
+    }
+
+    /* Table */
+    .lb-table-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .rank-cell { width: 52px; text-align: center; font-weight: 700; }
+    .rank-num.gold   { color: #fbbf24; }
+    .rank-num.silver { color: #94a3b8; }
+    .rank-num.bronze { color: #cd7c3a; }
+    .player-cell {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .player-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--border-card);
+      flex-shrink: 0;
+    }
+    .player-info .player-name { font-weight: 600; font-size: 0.9rem; }
+    .player-info .player-sub  { font-size: 0.75rem; color: var(--text-muted); }
+    .score-cell { font-weight: 700; color: var(--accent); }
+    .winrate-bar-cell { min-width: 120px; }
+    .winrate-bar-wrap {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .winrate-bar {
+      flex: 1; height: 6px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 3px; overflow: hidden;
+    }
+    .winrate-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #34d399, #06b6d4);
+      border-radius: 3px;
+      transition: width 0.6s ease;
+    }
+    .winrate-pct { font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+    .trend-up   { color: var(--success); }
+    .trend-down { color: var(--danger); }
+    .trend-same { color: var(--text-faint); }
+
+    /* Pagination */
+    .pagination {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 20px;
+    }
+    .page-btn {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      border: 1px solid var(--border-card);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer; font-family: inherit;
+      transition: var(--transition);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.875rem;
+    }
+    .page-btn.active, .page-btn:hover {
+      background: rgba(129,140,248,0.15);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .lb-loading {
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      padding: 60px; color: var(--text-muted);
+    }
+
+    @media(max-width:640px) {
+      .podium { gap:8px; }
+      .podium-item { max-width: 120px; }
+      .lb-page { padding: 24px 16px; }
+      .lb-filters { gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar" id="main-navbar">
+    <a href="index.html" class="navbar-brand" id="nav-brand">
+      <span class="brand-icon">⚔️</span>Bot Arena
+    </a>
+    <ul class="navbar-nav">
+      <li><a href="index.html" id="nav-home">🏠 Trang chủ</a></li>
+      <li><a href="arena.html" id="nav-arena">🎮 Thi đấu</a></li>
+      <li><a href="leaderboard.html" class="active" id="nav-lb">🏆 Leaderboard</a></li>
+      <li><a href="guide.html" id="nav-guide">📖 Hướng dẫn</a></li>
+    </ul>
+    <div class="navbar-actions" id="navbar-actions">
+      <a href="login.html" class="btn btn-ghost btn-sm" id="btn-nav-login">Đăng nhập</a>
+      <a href="register.html" class="btn btn-primary btn-sm" id="btn-nav-register">Đăng ký</a>
+    </div>
+  </nav>
+
+  <div class="page-wrapper">
+    <div class="lb-page">
+      <div class="section-header">
+        <h1 class="gradient-text">🏆 Bảng Xếp Hạng</h1>
+        <p>Những bot AI xuất sắc nhất trong đấu trường</p>
+      </div>
+
+      <!-- Podium Top 3 -->
+      <div class="podium" id="podium-section">
+        <div class="lb-loading"><span class="spinner"></span> Đang tải top 3...</div>
+      </div>
+
+      <!-- Filters -->
+      <div class="lb-filters">
+        <div class="lb-search">
+          <span class="icon">🔍</span>
+          <input type="text" id="lb-search-input" class="form-control" placeholder="Tìm kiếm thí sinh...">
+        </div>
+        <button class="filter-tab active" data-lang="all" id="filter-all">Tất cả</button>
+        <button class="filter-tab" data-lang="python" id="filter-python">🐍 Python</button>
+        <button class="filter-tab" data-lang="cpp" id="filter-cpp">⚙️ C++</button>
+        <button class="filter-tab" data-lang="java" id="filter-java">☕ Java</button>
+      </div>
+
+      <!-- Table -->
+      <div class="lb-table-card">
+        <div class="table-wrap">
+          <table id="lb-table">
+            <thead>
+              <tr>
+                <th class="rank-cell">#</th>
+                <th>Thí sinh</th>
+                <th>Ngôn ngữ</th>
+                <th>Điểm ELO</th>
+                <th>Thắng / Thua / Hòa</th>
+                <th class="winrate-bar-cell">Tỷ lệ thắng</th>
+                <th>Xu hướng</th>
+              </tr>
+            </thead>
+            <tbody id="lb-tbody">
+              <tr>
+                <td colspan="7">
+                  <div class="lb-loading"><span class="spinner"></span> Đang tải dữ liệu...</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="lb-pagination"></div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <p>© 2026 Bot Arena · Cập nhật realtime sau mỗi trận đấu</p>
+    </footer>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+  <script type="module" src="js/auth.js"></script>
+  <script type="module" src="js/leaderboard.js"></script>
+</body>
+</html>

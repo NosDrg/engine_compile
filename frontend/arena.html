@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thi đấu – Bot Arena</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Overrides to integrate arena into new design */
+    body { padding: 0; }
+
+    .arena-layout {
+      position: relative; z-index: 1;
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 28px 24px;
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .arena-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      backdrop-filter: blur(16px);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .arena-panel h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .bot-block {
+      padding: 14px;
+      border-radius: 10px;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid transparent;
+      margin-bottom: 16px;
+    }
+    .bot-block.p0 { border-color: rgba(56,189,248,0.35); }
+    .bot-block.p1 { border-color: rgba(244,63,94,0.35); }
+
+    .arena-divider {
+      border: none;
+      border-top: 1px solid var(--border-card);
+      margin: 16px 0;
+    }
+
+    .match-btn {
+      background: linear-gradient(135deg, #4f46e5, #06b6d4);
+      color: white;
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .match-btn:hover:not(:disabled) {
+      filter: brightness(1.15);
+      box-shadow: 0 0 20px rgba(79,70,229,0.5);
+    }
+    .match-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    /* Board area overrides */
+    header { display: none; }
+    main.container { display: contents; }
+
+    @media(max-width:960px) {
+      .arena-layout { grid-template-columns: 1fr; }
+    }
+    .arena-extras { max-width: 1252px; margin: 0 auto 24px; display: grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap: 20px; }
+    .version-list { max-height: 220px; overflow: auto; font-size: .82rem; }
+    .version-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid var(--border-card); font-size:.82rem; }
+    .tournament-card { border-bottom:1px solid var(--border-card); padding:6px 0 12px; }
+    .version-row a { color:var(--accent); }
+    .submission-error { white-space:pre-wrap; max-height:100px; overflow:auto; font-size:.72rem; color:var(--danger); }
+    .replay-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:12px 0; }
+    .replay-controls select { width:auto; min-width:80px; }
+    .replay-controls input[type=range] { flex:1; min-width:120px; accent-color:var(--accent); }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar" id="main-navbar">
+    <a href="index.html" class="navbar-brand"><span class="brand-icon">⚔️</span>Bot Arena</a>
+    <ul class="navbar-nav">
+      <li><a href="index.html" id="nav-home">🏠 Trang chủ</a></li>
+      <li><a href="arena.html" class="active" id="nav-arena">🎮 Thi đấu</a></li>
+      <li><a href="leaderboard.html" id="nav-lb">🏆 Leaderboard</a></li>
+      <li><a href="guide.html" id="nav-guide">📖 Hướng dẫn</a></li>
+    </ul>
+    <div class="navbar-actions" id="navbar-actions">
+      <a href="login.html" class="btn btn-ghost btn-sm" id="btn-nav-login">Đăng nhập</a>
+      <a href="register.html" class="btn btn-primary btn-sm" id="btn-nav-register">Đăng ký</a>
+    </div>
+  </nav>
+
+  <div class="page-wrapper">
+    <div class="arena-layout">
+      <!-- Left Panel: Control -->
+      <section class="arena-panel">
+        <h2>⚙️ Thiết lập trận đấu</h2>
+
+        <!-- Bot 0 (Mine) -->
+        <div class="bot-block p0">
+          <div style="font-size:0.8rem;font-weight:700;color:var(--p0-primary);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">
+            🔵 Bot của bạn (Player 0)
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="my-bot-id">Tên thí sinh (Username)</label>
+            <input type="text" id="my-bot-id" class="form-control" placeholder="nhập_tên_của_bạn" value="ThiSinh_A">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="version-name">Tên phiên bản</label>
+            <input type="text" id="version-name" class="form-control" maxlength="64" placeholder="Ví dụ: phòng thủ v2">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="my-bot-lang">Ngôn ngữ lập trình</label>
+            <select id="my-bot-lang" class="form-control">
+              <option value="python">🐍 Python</option>
+              <option value="cpp">⚙️ C++</option>
+              <option value="java">☕ Java</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="my-bot-code">Mã nguồn thuật toán</label>
+            <textarea id="my-bot-code" class="form-control" rows="9" maxlength="262144" placeholder="def get_move(state): ..."></textarea>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button id="btn-validate-my-bot" class="btn btn-secondary" style="flex:1;">🔍 Kiểm tra</button>
+            <button id="btn-submit-my-bot" class="btn btn-secondary" style="flex:1;">💾 Nộp bài</button>
+          </div>
+          <div id="my-bot-status" class="status-msg mt-1"></div>
+          <div class="form-group mt-2">
+            <strong>Các phiên bản bot</strong>
+            <div id="submission-history" class="version-list">Đang tải phiên bản…</div>
+          </div>
+        </div>
+
+        <hr class="arena-divider">
+
+        <!-- Bot 1 (Opponent) -->
+        <div class="bot-block p1">
+          <div style="font-size:0.8rem;font-weight:700;color:var(--p1-primary);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">
+            🔴 Đối thủ (Player 1)
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="select-opponent">Chọn đối thủ từ hệ thống</label>
+            <select id="select-opponent" class="form-control">
+              <option value="">-- Đang tải danh sách... --</option>
+            </select>
+          </div>
+          <button id="btn-refresh-opponents" class="btn btn-ghost btn-sm" style="margin-top:4px;">🔄 Làm mới danh sách</button>
+        </div>
+
+        <button id="btn-start-match" class="match-btn">⚔️ Bắt Đầu Thách Đấu</button>
+        <button id="btn-cancel-match" class="btn btn-ghost" type="button" hidden>Hủy trận đang chờ</button>
+        <div class="form-group mt-2">
+          <label class="form-label" for="match-mode">Chế độ</label>
+          <select id="match-mode" class="form-control"><option value="scrimmage">Scrimmage · không đổi rating</option><option value="ranked">Ranked · cập nhật ELO</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="match-seed">Seed bàn cờ (để trống để tạo ngẫu nhiên)</label>
+          <input id="match-seed" class="form-control" type="number" min="0" step="1" placeholder="Ví dụ: 20261018">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="match-map">Bản đồ xuất quân</label>
+          <select id="match-map" class="form-control"><option value="classic">Classic · tiêu chuẩn</option><option value="frontline">Frontline · xuất quân sát biên</option><option value="deep">Deep · xuất quân lùi sâu</option></select>
+        </div>
+        <div style="text-align:center;margin-top:10px;">
+          <a href="guide.html" style="font-size:0.8rem;color:var(--text-muted);text-decoration:none;">📖 Xem hướng dẫn viết bot</a>
+        </div>
+      </section>
+
+      <!-- Right Panel: Board -->
+      <section class="arena-panel">
+        <div class="match-info">
+          <div class="info-badge">Lượt (Round)<span id="display-round">0</span></div>
+          <div class="info-badge">Đến lượt<span id="display-player">-</span></div>
+          <div class="info-badge">Thời gian<span id="display-time">0ms</span></div>
+        </div>
+
+        <div id="replay-controls" class="replay-controls">
+          <button id="replay-toggle" class="btn btn-secondary btn-sm" type="button">⏸ Tạm dừng</button>
+          <button id="replay-reset" class="btn btn-ghost btn-sm" type="button">↺ Về đầu</button>
+          <label for="replay-speed">Tốc độ</label>
+          <select id="replay-speed" class="form-control"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select>
+          <input id="replay-seek" aria-label="Tua đến lượt" type="range" min="0" max="0" value="0" disabled>
+        </div>
+
+        <div class="board-wrapper">
+          <div id="board-container" class="board-container"></div>
+        </div>
+
+        <div class="legend">
+          <span><b class="p0-dot">●</b> Player 0 (Xanh)</span>
+          <span><b class="p1-dot">●</b> Player 1 (Đỏ)</span>
+          <span>Mục tiêu: Chiếm <b>A1/I9</b> hoặc diệt hết 1 loại quân</span>
+        </div>
+
+        <div id="match-result" class="result-box hidden">
+          <h3 id="result-title">Kết quả trận đấu</h3>
+          <p id="result-desc"></p>
+          <p id="match-seed-result" class="text-muted"></p>
+          <button id="btn-rematch" class="btn btn-secondary btn-sm mt-2" style="width:auto;padding:8px 20px;">🔁 Thách đấu lại</button>
+        </div>
+      </section>
+    </div>
+
+    <section class="arena-panel arena-extras">
+      <div>
+        <h2>👥 Đội của bạn</h2>
+        <div class="form-group"><input id="team-name" class="form-control" maxlength="48" placeholder="Tên đội mới"></div>
+        <button id="btn-create-team" class="btn btn-secondary btn-sm">Tạo đội</button>
+        <div class="form-group mt-2"><input id="team-code" class="form-control" maxlength="64" placeholder="Mã mời tham gia"></div>
+        <button id="btn-join-team" class="btn btn-secondary btn-sm">Tham gia đội</button>
+        <div id="team-manage" hidden class="mt-2">
+          <button id="btn-rotate-team-code" class="btn btn-ghost btn-sm">Đổi mã mời</button>
+          <button id="btn-leave-team" class="btn btn-ghost btn-sm">Rời đội</button>
+        </div>
+        <div id="team-members" class="mt-2" aria-label="Thành viên đội"></div>
+        <p id="team-status" class="status-msg"></p>
+      </div>
+      <div>
+        <h2>🏆 Giải đấu</h2>
+        <div id="tournament-list">Đang tải danh sách giải…</div>
+      </div>
+      <div>
+        <h2>📜 Trận gần đây</h2>
+        <div id="recent-matches">Đang tải lịch sử…</div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>© 2026 Bot Arena · Engine Rust · Chạy bot có giới hạn tài nguyên</p>
+    </footer>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+  <script type="module" src="js/auth.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

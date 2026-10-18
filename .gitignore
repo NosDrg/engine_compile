@@ -1,0 +1,16 @@
+.submissions
+
+# Rust build artifacts
+/target/
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+.vscode/
+main.rs
+*.db

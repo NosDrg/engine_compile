@@ -1,0 +1,388 @@
+/* frontend/css/style.css */
+:root {
+  --bg-main: #0b0f19;
+  --bg-card: rgba(18, 24, 38, 0.85);
+  --border-card: rgba(255, 255, 255, 0.08);
+  --text-main: #f3f4f6;
+  --text-muted: #9ca3af;
+  
+  --p0-primary: #38bdf8;
+  --p0-glow: rgba(56, 189, 248, 0.45);
+  --p1-primary: #f43f5e;
+  --p1-glow: rgba(244, 63, 94, 0.45);
+  
+  --board-border: #334155;
+  --cell-size: 54px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  background: radial-gradient(circle at 50% 10%, #1e1b4b 0%, var(--bg-main) 70%);
+  color: var(--text-main);
+  min-height: 100vh;
+  padding: 24px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+header h1 {
+  font-size: 2rem;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #38bdf8, #818cf8, #f43f5e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+header .subtitle {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+
+/* Bố cục 2 cột chính */
+.container {
+  max-width: 1300px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 460px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  backdrop-filter: blur(16px);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.panel h2 {
+  font-size: 1.15rem;
+  margin-bottom: 16px;
+  color: #e2e8f0;
+}
+
+/* Khối cấu hình nộp Bot */
+.bot-setup {
+  padding: 14px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid transparent;
+}
+
+.bot-setup.p0 {
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.bot-setup.p1 {
+  border-color: rgba(244, 63, 94, 0.35);
+}
+
+.bot-setup h3 {
+  font-size: 0.95rem;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bot-setup.p0 h3 { color: var(--p0-primary); }
+.bot-setup.p1 h3 { color: var(--p1-primary); }
+
+.form-group {
+  margin-bottom: 10px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+input[type="text"], select, textarea {
+  width: 100%;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #f8fafc;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-family: "JetBrains Mono", Consolas, monospace;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input[type="text"]:focus, select:focus, textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+}
+
+textarea {
+  resize: vertical;
+}
+
+/* Các nút hành động */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 9px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #334155;
+  color: #f1f5f9;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #475569;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #4f46e5, #06b6d4);
+  color: #ffffff;
+  padding: 12px;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.15);
+  box-shadow: 0 0 16px rgba(79, 70, 229, 0.4);
+}
+
+.status-msg {
+  font-size: 0.78rem;
+  margin-top: 6px;
+  min-height: 16px;
+}
+
+.status-msg.success { color: #34d399; }
+.status-msg.error { color: #f87171; }
+
+/* Thông số hiển thị lượt đấu */
+.match-info {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.info-badge {
+  flex: 1;
+  background: #172033;
+  border: 1px solid #334155;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.info-badge span {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-top: 2px;
+}
+
+/* Khung chứa và lưới bàn cờ 9x9 */
+.board-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.board-container {
+  display: grid;
+  grid-template-columns: repeat(9, var(--cell-size));
+  grid-template-rows: repeat(9, var(--cell-size));
+  gap: 2px;
+  background: #0f172a;
+  padding: 6px;
+  border-radius: 10px;
+  border: 2px solid var(--board-border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* Từng ô cờ (Cells) */
+.cell {
+  width: var(--cell-size);
+  height: var(--cell-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  user-select: none;
+  border-radius: 4px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: filter 0.15s ease;
+}
+
+.cell.cell-light {
+  background-image: url('/assets/block1.jpg'), url('../assets/block1.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+.cell.cell-dark {
+  background-image: url('/assets/block2.jpg'), url('../assets/block2.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+/* Đánh dấu ô căn cứ A1 & I9 */
+.cell.goal-p1 {
+  box-shadow: inset 0 0 0 2px var(--p1-primary);
+}
+
+.cell.goal-p1::after {
+  content: "A1";
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 10px;
+  color: #ffffff;
+  background: rgba(244, 63, 94, 0.85);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 700;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.cell.goal-p0 {
+  box-shadow: inset 0 0 0 2px var(--p0-primary);
+}
+
+.cell.goal-p0::after {
+  content: "I9";
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  font-size: 10px;
+  color: #ffffff;
+  background: rgba(56, 189, 248, 0.85);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 700;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Highlight nước đi vừa diễn ra */
+.cell.last-from {
+  filter: brightness(0.7);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.4);
+}
+
+.cell.last-to {
+  box-shadow: inset 0 0 0 3px #a855f7 !important;
+  animation: pulse-glow 1s infinite alternate;
+}
+
+@keyframes pulse-glow {
+  from { filter: brightness(1); }
+  to { filter: brightness(1.25); }
+}
+
+/* QUÂN CỜ (PIECES) */
+.piece {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 5;
+  box-sizing: border-box;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  font-weight: bold;
+}
+
+.piece:hover {
+  transform: scale(1.15);
+}
+
+/* Viền phát sáng cho Player 0 (Xanh) */
+.piece.owner-0 {
+  background: rgba(14, 165, 233, 0.35);
+  border: 2px solid var(--p0-primary);
+  box-shadow: 0 0 10px var(--p0-glow);
+  color: var(--p0-primary);
+}
+
+/* Viền phát sáng cho Player 1 (Đỏ) */
+.piece.owner-1 {
+  background: rgba(225, 29, 72, 0.35);
+  border: 2px solid var(--p1-primary);
+  box-shadow: 0 0 10px var(--p1-glow);
+  color: var(--p1-primary);
+}
+
+/* Hình ảnh icon quân cờ */
+.piece-img {
+  width: 28px;
+  height: 28px;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+}
+
+/* Chú thích luật chơi */
+.legend {
+  display: flex;
+  justify-content: space-around;
+  font-size: 0.85rem;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+  color: var(--text-muted);
+}
+
+.legend b.p0-dot { color: var(--p0-primary); margin-right: 4px; }
+.legend b.p1-dot { color: var(--p1-primary); margin-right: 4px; }
+
+/* Hộp thông báo kết quả */
+.result-box {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.15));
+  border: 1px solid #10b981;
+  text-align: center;
+}
+
+.result-box.hidden { display: none; }
+.result-box h3 { color: #34d399; font-size: 1.1rem; margin-bottom: 4px; }
+.result-box p { font-size: 0.9rem; color: #e2e8f0; }
