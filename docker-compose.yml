@@ -1,24 +1,19 @@
+version: '3.8'
+
 services:
-  match-arena:
+  match_arena:
     build:
       context: .
       dockerfile: Dockerfile
-    image: match-arena:latest
     container_name: match_arena_app
-    restart: unless-stopped
     ports:
       - "8000:8000"
     environment:
-      - PYTHONUNBUFFERED=1
-      - PYTHONPATH=/app/protocol
+      - PORT=8000
+      - JWT_SECRET=local_dev_secret_key_2026
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin123
     volumes:
+      # Giữ lại SQLite DB và các file bot đã nộp ngay trên máy host
       - ./protocol/save:/app/protocol/save
-      - ./frontend:/app/frontend:ro
-      - ./workspace:/app/workspace
-
-    # Tùy chọn: Đảm bảo container nhìn thấy đủ CPU cores để CoreAllocator phân chia luồng
-    deploy:
-      resources:
-        limits:
-          cpus: '4.0'
-          memory: 4G
+    restart: unless-stopped

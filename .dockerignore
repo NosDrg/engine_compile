@@ -1,23 +1,25 @@
-# Bỏ qua môi trường ảo Python
-**/.venv
-**/venv
-**/env
-**/__pycache__
-**/*.pyc
+# Python virtual environments & bytecode (chặn ở mọi cấp thư mục)
+**/.venv/
+**/.venv/**
+**/venv/
+**/env/
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
 
-# Bỏ qua thư mục build Rust cục bộ
-target/
+# Rust & C++ build artifacts
 **/target/
+**/*.o
+**/*.exe
 
-# Bỏ qua file database SQLite và dữ liệu tạm
-protocol/*.db
-protocol/*.db-journal
-workspace/
-**/workspace/
+# Database & local data
+protocol/save/*.db
+protocol/save/bots/*
+!protocol/save/.gitkeep
 
-# Bỏ qua Git và file hệ thống Windows/IDE
-.git
+# Git & IDE configs
+.git/
 .gitignore
-.idea
-.vscode
-*.tar
+.vscode/
+.idea/
+*.log

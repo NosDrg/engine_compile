@@ -1,123 +1,198 @@
-# protocol/routers/missions.py
-from datetime import datetime
-from fastapi import APIRouter, Request
+# protocol/routers/admin.py
+import shutil
+import psutil
+from pydantic import BaseModel
+from typing import Optional, Dict, Any, List
+from fastapi import APIRouter, HTTPException, Depends, status
+from routers.auth import get_current_user
 
 from database.db_manager import DatabaseManager
 from config import DEFAULT_DB_PATH
 
-router = APIRouter(prefix="/api/missions", tags=["Missions"])
+# Đổi prefix về "/api" để khớp chính xác với frontend api.js
+router = APIRouter(prefix="/api", tags=["Admin"])
 db = DatabaseManager(DEFAULT_DB_PATH)
 
-# Khởi tạo bảng lưu điểm thưởng và lịch sử nhiệm vụ nếu chưa có
-with db._get_connection() as conn:
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS user_points (
-            user_id INTEGER PRIMARY KEY,
-            points INTEGER DEFAULT 0,
-            last_check_in DATE
+def require_admin(user: Dict[str, Any] = Depends(get_current_user)):
+    """Kiểm tra quyền admin từ JWT Token."""
+    if user.get("role") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="Yêu cầu quyền quản trị viên."
         )
-    """)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS mission_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            mission_key TEXT NOT NULL,
-            points INTEGER NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    conn.commit()
+    return user
 
-@router.get("/daily")
-def get_daily_missions(request: Request):
-    username = request.cookies.get("arena_user") or "anonymous"
-    user_id = db.get_or_create_user(username)
-    today_str = datetime.now().strftime("%Y-%m-%d")
+# --- Schemas ---
+class RoleUpdateReq(BaseModel):
+    role: str
 
+class PasswordResetReq(BaseModel):
+    password: str
+
+class TournamentCreateReq(BaseModel):
+    name: str
+    description: Optional[str] = ""
+    format: Optional[str] = "single_elimination"
+    map_id: Optional[str] = "classic"
+    starts_at: Optional[str] = None
+
+# --- Admin Overview & System Metrics ---
+@router.get("/admin/overview")
+def get_admin_overview(admin: Dict[str, Any] = Depends(require_admin)):
     with db._get_connection() as conn:
         cursor = conn.cursor()
-        row = cursor.execute("SELECT points, last_check_in FROM user_points WHERE user_id = ?", (user_id,)).fetchone()
-        
-    points = row["points"] if row else 0
-    checked_in = (row["last_check_in"] == today_str) if row else False
-
-    # Danh sách nhiệm vụ hằng ngày
-    missions = [
-        {
-            "key": "check_in",
-            "title": "Điểm danh hàng ngày",
-            "progress": 1 if checked_in else 0,
-            "target": 1,
-            "reward": 50,
-            "done": checked_in
-        },
-        {
-            "key": "play_matches",
-            "title": "Tham gia 3 trận đấu",
-            "progress": 0,
-            "target": 3,
-            "reward": 100,
-            "done": False
-        },
-        {
-            "key": "submit_bot",
-            "title": "Nộp phiên bản bot mới",
-            "progress": 0,
-            "target": 1,
-            "reward": 150,
-            "done": False
-        }
-    ]
+        total_users = cursor.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+        total_subs = cursor.execute("SELECT COUNT(*) FROM submissions").fetchone()[0]
+        total_matches = cursor.execute("SELECT COUNT(*) FROM matches").fetchone()[0]
 
     return {
         "success": True,
-        "points": points,
-        "missions": missions
+        "overview": {
+            "tong_so_nguoi_dung": total_users,
+            "tong_so_submission": total_subs,
+            "tong_so_tran_dau": total_matches,
+            "giai_dau_dang_chay": 0
+        }
     }
 
-@router.get("/history")
-def get_points_history(request: Request):
-    username = request.cookies.get("arena_user") or "anonymous"
-    user_id = db.get_or_create_user(username)
+@router.get("/admin/system")
+def get_admin_system(admin: Dict[str, Any] = Depends(require_admin)):
+    cpu_percent = psutil.cpu_percent(interval=None) if hasattr(psutil, "cpu_percent") else 5.0
+    mem = psutil.virtual_memory() if hasattr(psutil, "virtual_memory") else None
+    disk = shutil.disk_usage("/")
 
+    process = psutil.Process() if hasattr(psutil, "Process") else None
+    proc_mem = process.memory_info().rss if process else 100 * 1024 * 1024
+
+    return {
+        "success": True,
+        "metrics": {
+            "cpu_percent": cpu_percent,
+            "memory_used": mem.used if mem else 1024 * 1024 * 1024,
+            "memory_total": mem.total if mem else 4 * 1024 * 1024 * 1024,
+            "process_memory": proc_mem,
+            "disk_free": disk.free,
+            "disk_total": disk.total
+        }
+    }
+
+# --- Admin Users Management ---
+@router.get("/admin/users")
+def get_admin_users(admin: Dict[str, Any] = Depends(require_admin)):
+    with db._get_connection() as conn:
+        cursor = conn.cursor()
+        rows = cursor.execute("SELECT id, username, display_name, role, created_at FROM users ORDER BY id DESC").fetchall()
+
+    users = []
+    for r in rows:
+        users.append({
+            "id": r["id"],
+            "username": r["username"],
+            "display_name": r["display_name"] or r["username"],
+            "role": r["role"] or "player",
+            "rating": 1000,
+            "wins": 0,
+            "losses": 0,
+            "draws": 0
+        })
+    return {"success": True, "users": users}
+
+@router.patch("/admin/users/{user_id}/role")
+def set_user_role(user_id: int, req: RoleUpdateReq, admin: Dict[str, Any] = Depends(require_admin)):
+    with db._get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET role = ? WHERE id = ?", (req.role, user_id))
+        conn.commit()
+    return {"success": True, "message": f"Đã cập nhật vai trò người dùng {user_id} thành {req.role}"}
+
+@router.put("/admin/users/{user_id}/password")
+def reset_user_password(user_id: int, req: PasswordResetReq, admin: Dict[str, Any] = Depends(require_admin)):
+    import hashlib
+    new_hash = hashlib.sha256(req.password.encode()).hexdigest()
+    with db._get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, user_id))
+        conn.commit()
+    return {"success": True, "message": "Đã đổi mật khẩu thành công"}
+
+@router.delete("/admin/users/{user_id}")
+def delete_user(user_id: int, admin: Dict[str, Any] = Depends(require_admin)):
+    with db._get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM submissions WHERE user_id = ?", (user_id,))
+        cursor.execute("DELETE FROM matches WHERE user0_id = ? OR user1_id = ?", (user_id, user_id))
+        cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        conn.commit()
+    return {"success": True, "message": "Đã xóa tài khoản"}
+
+# --- Admin Submissions ---
+@router.get("/admin/submissions")
+def get_admin_submissions(admin: Dict[str, Any] = Depends(require_admin)):
     with db._get_connection() as conn:
         cursor = conn.cursor()
         rows = cursor.execute("""
-            SELECT mission_key, points, created_at 
-            FROM mission_history 
-            WHERE user_id = ? 
-            ORDER BY id DESC LIMIT 50
-        """, (user_id,)).fetchall()
+            SELECT s.id, u.username, s.language, s.status, s.created_at
+            FROM submissions s
+            JOIN users u ON s.user_id = u.id
+            ORDER BY s.created_at DESC LIMIT 50
+        """).fetchall()
 
-    return {
-        "success": True,
-        "history": [dict(r) for r in rows]
-    }
+    submissions = []
+    for r in rows:
+        submissions.append({
+            "id": r["id"],
+            "username": r["username"],
+            "version_name": f"v_{r['id'][:8]}",
+            "language": r["language"],
+            "status": r["status"],
+            "is_active": True if r["status"] == "VALID" else False,
+            "created_at": r["created_at"]
+        })
+    return {"success": True, "submissions": submissions}
 
-@router.post("/check-in")
-def check_in(request: Request):
-    username = request.cookies.get("arena_user") or "anonymous"
-    user_id = db.get_or_create_user(username)
-    today_str = datetime.now().strftime("%Y-%m-%d")
-
+@router.delete("/admin/submissions/{submission_id}")
+def delete_submission(submission_id: str, admin: Dict[str, Any] = Depends(require_admin)):
     with db._get_connection() as conn:
         cursor = conn.cursor()
-        row = cursor.execute("SELECT points, last_check_in FROM user_points WHERE user_id = ?", (user_id,)).fetchone()
-        
-        if row and row["last_check_in"] == today_str:
-            return {"success": True, "already_done": True, "message": "Hôm nay bạn đã điểm danh rồi."}
-
-        reward = 50
-        if not row:
-            cursor.execute("INSERT INTO user_points (user_id, points, last_check_in) VALUES (?, ?, ?)",
-                           (user_id, reward, today_str))
-        else:
-            cursor.execute("UPDATE user_points SET points = points + ?, last_check_in = ? WHERE user_id = ?",
-                           (reward, today_str, user_id))
-
-        cursor.execute("INSERT INTO mission_history (user_id, mission_key, points) VALUES (?, ?, ?)",
-                       (user_id, "Điểm danh hàng ngày", reward))
+        cursor.execute("DELETE FROM submissions WHERE id = ?", (submission_id,))
         conn.commit()
+    return {"success": True, "message": "Đã xóa mã nguồn"}
 
-    return {"success": True, "already_done": False, "points_earned": reward}
+# --- Admin Forum Moderation ---
+@router.get("/admin/forum/messages")
+def get_admin_forum_messages(admin: Dict[str, Any] = Depends(require_admin)):
+    with db._get_connection() as conn:
+        cursor = conn.cursor()
+        rows = cursor.execute("SELECT id, username, display_name, body, created_at FROM forum_messages ORDER BY id DESC LIMIT 50").fetchall()
+    return {"success": True, "messages": [dict(r) for r in rows]}
+
+@router.delete("/admin/forum/messages/{message_id}")
+def delete_admin_forum_message(message_id: int, admin: Dict[str, Any] = Depends(require_admin)):
+    with db._get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM forum_messages WHERE id = ?", (message_id,))
+        cursor.execute("INSERT INTO forum_deletions (message_id) VALUES (?)", (message_id,))
+        conn.commit()
+    return {"success": True, "message": "Đã xóa tin nhắn"}
+
+# --- Tournaments Endpoints ---
+@router.get("/tournaments")
+def get_tournaments():
+    return {"success": True, "tournaments": []}
+
+@router.get("/tournaments/{tour_id}")
+def get_tournament_detail(tour_id: str):
+    return {
+        "success": True,
+        "tournament": {
+            "id": tour_id,
+            "name": "Giải đấu mẫu",
+            "entries": [],
+            "standings": [],
+            "games": []
+        }
+    }
+
+@router.post("/admin/tournaments")
+def create_tournament(req: TournamentCreateReq, admin: Dict[str, Any] = Depends(require_admin)):
+    return {"success": True, "tournament_id": "tour_demo_1"}

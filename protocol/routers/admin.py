@@ -1,21 +1,25 @@
 # protocol/routers/admin.py
 import shutil
 import psutil
-from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
+from fastapi import APIRouter, HTTPException, Depends, status
+from routers.auth import get_current_user
 
 from database.db_manager import DatabaseManager
 from config import DEFAULT_DB_PATH
 
-router = APIRouter(prefix="/api", tags=["Admin & Tournaments"])
+# Đổi prefix về "/api" để khớp chính xác với frontend api.js
+router = APIRouter(prefix="/api", tags=["Admin"])
 db = DatabaseManager(DEFAULT_DB_PATH)
 
-def verify_admin(request: Request):
-    """Kiểm tra quyền admin từ cookie phiên."""
-    user = request.cookies.get("arena_user")
-    if user != "admin":
-        raise HTTPException(status_code=403, detail="Yêu cầu quyền quản trị viên.")
+def require_admin(user: Dict[str, Any] = Depends(get_current_user)):
+    """Kiểm tra quyền admin từ JWT Token."""
+    if user.get("role") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="Yêu cầu quyền quản trị viên."
+        )
     return user
 
 # --- Schemas ---
@@ -34,8 +38,7 @@ class TournamentCreateReq(BaseModel):
 
 # --- Admin Overview & System Metrics ---
 @router.get("/admin/overview")
-def get_admin_overview(request: Request):
-    verify_admin(request)
+def get_admin_overview(admin: Dict[str, Any] = Depends(require_admin)):
     with db._get_connection() as conn:
         cursor = conn.cursor()
         total_users = cursor.execute("SELECT COUNT(*) FROM users").fetchone()[0]
@@ -53,8 +56,7 @@ def get_admin_overview(request: Request):
     }
 
 @router.get("/admin/system")
-def get_admin_system(request: Request):
-    verify_admin(request)
+def get_admin_system(admin: Dict[str, Any] = Depends(require_admin)):
     cpu_percent = psutil.cpu_percent(interval=None) if hasattr(psutil, "cpu_percent") else 5.0
     mem = psutil.virtual_memory() if hasattr(psutil, "virtual_memory") else None
     disk = shutil.disk_usage("/")
@@ -76,19 +78,18 @@ def get_admin_system(request: Request):
 
 # --- Admin Users Management ---
 @router.get("/admin/users")
-def get_admin_users(request: Request):
-    verify_admin(request)
+def get_admin_users(admin: Dict[str, Any] = Depends(require_admin)):
     with db._get_connection() as conn:
         cursor = conn.cursor()
-        rows = cursor.execute("SELECT id, username, created_at FROM users ORDER BY id DESC").fetchall()
+        rows = cursor.execute("SELECT id, username, display_name, role, created_at FROM users ORDER BY id DESC").fetchall()
 
     users = []
     for r in rows:
         users.append({
             "id": r["id"],
             "username": r["username"],
-            "display_name": r["username"],
-            "role": "admin" if r["username"] == "admin" else "player",
+            "display_name": r["display_name"] or r["username"],
+            "role": r["role"] or "player",
             "rating": 1000,
             "wins": 0,
             "losses": 0,
@@ -97,18 +98,25 @@ def get_admin_users(request: Request):
     return {"success": True, "users": users}
 
 @router.patch("/admin/users/{user_id}/role")
-def set_user_role(user_id: int, req: RoleUpdateReq, request: Request):
-    verify_admin(request)
+def set_user_role(user_id: int, req: RoleUpdateReq, admin: Dict[str, Any] = Depends(require_admin)):
+    with db._get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET role = ? WHERE id = ?", (req.role, user_id))
+        conn.commit()
     return {"success": True, "message": f"Đã cập nhật vai trò người dùng {user_id} thành {req.role}"}
 
 @router.put("/admin/users/{user_id}/password")
-def reset_user_password(user_id: int, req: PasswordResetReq, request: Request):
-    verify_admin(request)
+def reset_user_password(user_id: int, req: PasswordResetReq, admin: Dict[str, Any] = Depends(require_admin)):
+    import hashlib
+    new_hash = hashlib.sha256(req.password.encode()).hexdigest()
+    with db._get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, user_id))
+        conn.commit()
     return {"success": True, "message": "Đã đổi mật khẩu thành công"}
 
 @router.delete("/admin/users/{user_id}")
-def delete_user(user_id: int, request: Request):
-    verify_admin(request)
+def delete_user(user_id: int, admin: Dict[str, Any] = Depends(require_admin)):
     with db._get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM submissions WHERE user_id = ?", (user_id,))
@@ -119,8 +127,7 @@ def delete_user(user_id: int, request: Request):
 
 # --- Admin Submissions ---
 @router.get("/admin/submissions")
-def get_admin_submissions(request: Request):
-    verify_admin(request)
+def get_admin_submissions(admin: Dict[str, Any] = Depends(require_admin)):
     with db._get_connection() as conn:
         cursor = conn.cursor()
         rows = cursor.execute("""
@@ -144,8 +151,7 @@ def get_admin_submissions(request: Request):
     return {"success": True, "submissions": submissions}
 
 @router.delete("/admin/submissions/{submission_id}")
-def delete_submission(submission_id: str, request: Request):
-    verify_admin(request)
+def delete_submission(submission_id: str, admin: Dict[str, Any] = Depends(require_admin)):
     with db._get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM submissions WHERE id = ?", (submission_id,))
@@ -154,13 +160,19 @@ def delete_submission(submission_id: str, request: Request):
 
 # --- Admin Forum Moderation ---
 @router.get("/admin/forum/messages")
-def get_admin_forum_messages(request: Request):
-    verify_admin(request)
-    return {"success": True, "messages": []}
+def get_admin_forum_messages(admin: Dict[str, Any] = Depends(require_admin)):
+    with db._get_connection() as conn:
+        cursor = conn.cursor()
+        rows = cursor.execute("SELECT id, username, display_name, body, created_at FROM forum_messages ORDER BY id DESC LIMIT 50").fetchall()
+    return {"success": True, "messages": [dict(r) for r in rows]}
 
 @router.delete("/admin/forum/messages/{message_id}")
-def delete_admin_forum_message(message_id: str, request: Request):
-    verify_admin(request)
+def delete_admin_forum_message(message_id: int, admin: Dict[str, Any] = Depends(require_admin)):
+    with db._get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM forum_messages WHERE id = ?", (message_id,))
+        cursor.execute("INSERT INTO forum_deletions (message_id) VALUES (?)", (message_id,))
+        conn.commit()
     return {"success": True, "message": "Đã xóa tin nhắn"}
 
 # --- Tournaments Endpoints ---
@@ -182,6 +194,5 @@ def get_tournament_detail(tour_id: str):
     }
 
 @router.post("/admin/tournaments")
-def create_tournament(req: TournamentCreateReq, request: Request):
-    verify_admin(request)
+def create_tournament(req: TournamentCreateReq, admin: Dict[str, Any] = Depends(require_admin)):
     return {"success": True, "tournament_id": "tour_demo_1"}

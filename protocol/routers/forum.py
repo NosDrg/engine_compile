@@ -1,11 +1,13 @@
 # protocol/routers/forum.py
 import json
+import jwt
 from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Request, Query
 
 from database.db_manager import DatabaseManager
 from config import DEFAULT_DB_PATH
+from routers.auth import JWT_SECRET, JWT_ALGORITHM  # <-- THÊM MỚI
 
 router = APIRouter(prefix="/api/forum", tags=["Forum"])
 db = DatabaseManager(DEFAULT_DB_PATH)
@@ -91,11 +93,24 @@ def get_forum_deletions(after: int = 0, limit: int = 500):
         ).fetchall()
     return {"deletions": [dict(r) for r in rows]}
 
-# --- WebSocket thời gian thực ---
 @router.websocket("/ws")
 async def forum_websocket_endpoint(websocket: WebSocket):
-    # Lấy username từ cookie hoặc query params
-    username = websocket.cookies.get("arena_user") or "Khách"
+    token = websocket.cookies.get("arena_token") or websocket.query_params.get("token")
+    username = "Guest"
+    display_name = "Guest"
+
+    if token:
+        try:
+            payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+            uname = payload.get("sub")
+            if uname:
+                user = db.get_user_by_username(uname)
+                if user:
+                    username = user["username"]
+                    display_name = user.get("display_name") or username
+        except Exception:
+            pass
+
     await manager.connect(websocket)
 
     try:
@@ -117,7 +132,7 @@ async def forum_websocket_endpoint(websocket: WebSocket):
                 cursor = conn.cursor()
                 cursor.execute(
                     "INSERT INTO forum_messages (username, display_name, body, created_at) VALUES (?, ?, ?, ?)",
-                    (username, username, body, created_at)
+                    (username, display_name, body, created_at)
                 )
                 conn.commit()
                 message_id = cursor.lastrowid
@@ -127,7 +142,7 @@ async def forum_websocket_endpoint(websocket: WebSocket):
                 "message": {
                     "id": message_id,
                     "username": username,
-                    "display_name": username,
+                    "display_name": display_name,
                     "body": body,
                     "created_at": created_at
                 }

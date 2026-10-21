@@ -1,6 +1,7 @@
 # protocol/routers/matches.py
 from typing import Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends, status
+from routers.auth import get_current_user
 from pydantic import BaseModel
 from database.db_manager import DatabaseManager
 from config import DEFAULT_DB_PATH
@@ -15,7 +16,7 @@ class MatchReq(BaseModel):
     user1: str
 
 @router.post("/duel")
-def run_duel(req: MatchReq):
+def run_duel(req: MatchReq, user: dict = Depends(get_current_user)):
     c0, c1 = core_allocator.get_pair()
     try:
         res = match_service.run_match(req.user0, req.user1, core0=c0, core1=c1)

@@ -1,7 +1,8 @@
 # protocol/routers/teams.py
-from fastapi import APIRouter, Request
+from typing import Dict, Any
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from typing import Optional
+from routers.auth import get_current_user
 
 router = APIRouter(prefix="/api/teams", tags=["Teams"])
 
@@ -12,12 +13,11 @@ class TeamJoinReq(BaseModel):
     join_code: str
 
 @router.get("/me")
-def get_my_team(request: Request):
-    # Trả về team rỗng nếu người dùng chưa tạo/tham gia đội
+def get_my_team(user: Dict[str, Any] = Depends(get_current_user)):
     return {"success": True, "team": None}
 
 @router.post("")
-def create_team(req: TeamCreateReq, request: Request):
+def create_team(req: TeamCreateReq, user: Dict[str, Any] = Depends(get_current_user)):
     return {
         "success": True,
         "join_code": "TEAM1234",
@@ -25,14 +25,14 @@ def create_team(req: TeamCreateReq, request: Request):
             "id": 1,
             "name": req.name,
             "member_role": "owner",
-            "members": []
+            "members": [{"user_id": user["id"], "username": user["username"], "role": "owner"}]
         }
     }
 
 @router.post("/join")
-def join_team(req: TeamJoinReq, request: Request):
+def join_team(req: TeamJoinReq, user: Dict[str, Any] = Depends(get_current_user)):
     return {"success": True, "message": "Đã tham gia đội"}
 
 @router.post("/leave")
-def leave_team(request: Request):
+def leave_team(user: Dict[str, Any] = Depends(get_current_user)):
     return {"success": True, "message": "Đã rời đội"}
