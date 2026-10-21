@@ -4,15 +4,21 @@ from pathlib import Path
 # Thư mục protocol/
 PROTOCOL_DIR = Path(__file__).resolve().parent
 
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # Thư mục gốc dự án (/app trên container hoặc thư mục root repo)
 ROOT_DIR = PROTOCOL_DIR.parent
+
+PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
 
 # 1. Cơ sở dữ liệu SQLite trong thư mục save/
 DEFAULT_DB_PATH = str(PROTOCOL_DIR / "save" / "match_arena.db")
 
 # 2. Đường dẫn file thực thi Rust engine đã build
-DEFAULT_ENGINE_BIN = str(ROOT_DIR / "target" / "release" / "match_runner_engine")
-
+DEFAULT_ENGINE_BIN = os.getenv(
+    "ENGINE_BIN_PATH",
+    os.path.join(PROJECT_ROOT, "target", "release", "match_runner_engine")
+)
 # 3. Thư mục sandbox chứa mã nguồn chạy tạm của bot
 DEFAULT_WORKSPACE_DIR = str(ROOT_DIR / "workspace")
 WORKSPACE_DIR = DEFAULT_WORKSPACE_DIR
