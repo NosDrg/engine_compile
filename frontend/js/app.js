@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   username.readOnly = true;
 
   const controller = new MatchController(new BoardView('board-container'));
+  window.matchController = controller;
   document.getElementById('btn-cancel-match')?.addEventListener('click', async (event) => {
     const button = event.currentTarget;
     button.disabled = true;

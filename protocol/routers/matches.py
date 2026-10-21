@@ -78,21 +78,29 @@ def get_match_replay(match_id: str):
         "replay": match_data["replay_data"]
     }
 
+@router.get("/games/active")
+def get_active_games():
+    """Trả về danh sách game đang hoạt động cho thí sinh chọn lựa."""
+    games = db.get_active_games()
+    return {"success": True, "games": games}
+
 class PracticeReq(BaseModel):
     language: str
     source_code: str
     opponent_type: Optional[str] = "random_bot" # 'random_bot' hoặc 'greedy_bot'
+    game_slug: Optional[str] = "default"
 
 @router.post("/practice")
 def run_practice_match(req: PracticeReq, user: dict = Depends(get_current_user)):
     """
     Chế độ đấu thử:
-    - Chạy bot của thí sinh đối đầu với một bot mẫu.
+    - Chạy bot của thí sinh đối đầu với một bot mẫu theo trọng tài game_slug.
     - Không lưu kết quả vào bảng xếp hạng.
     - Trả về chi tiết từng lượt và log TLE/MLE/RTE nếu có lỗi.
     """
     lang = req.language.strip().lower()
     source_code = req.source_code
+    game_slug = req.game_slug or "default"
 
     if not source_code.strip():
         raise HTTPException(status_code=400, detail="Mã nguồn không được để trống.")
@@ -106,7 +114,8 @@ def run_practice_match(req: PracticeReq, user: dict = Depends(get_current_user))
         username=user["username"],
         language=lang,
         source_code=source_code,
-        bot_type=req.opponent_type or "random_bot"
+        bot_type=req.opponent_type or "random_bot",
+        game_slug=game_slug
     )
 
     if not res.get("success"):

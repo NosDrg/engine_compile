@@ -196,3 +196,134 @@ def get_tournament_detail(tour_id: str):
 @router.post("/admin/tournaments")
 def create_tournament(req: TournamentCreateReq, admin: Dict[str, Any] = Depends(require_admin)):
     return {"success": True, "tournament_id": "tour_demo_1"}
+
+
+# --- Dynamic Game & Runtime Studio Endpoints ---
+class GameUpsertReq(BaseModel):
+    slug: str
+    name: str
+    description: Optional[str] = ""
+    board_type: Optional[str] = "grid_9x9"
+    referee_code: str
+    starter_bot_code: Optional[str] = ""
+    is_active: Optional[int] = 1
+
+class RefereeTestReq(BaseModel):
+    referee_code: str
+
+class RuntimeUpsertReq(BaseModel):
+    id: str
+    name: str
+    extension: str
+    compile_cmd: Optional[str] = ""
+    run_cmd: str
+    timeout_sec: Optional[float] = 2.0
+    memory_limit_mb: Optional[int] = 128
+    is_enabled: Optional[int] = 1
+
+@router.get("/admin/games")
+def get_admin_games(admin: Dict[str, Any] = Depends(require_admin)):
+    """Lấy danh sách tất cả các trò chơi đã cấu hình trong hệ thống."""
+    return {"success": True, "games": db.get_all_games()}
+
+@router.post("/admin/games")
+def upsert_admin_game(req: GameUpsertReq, admin: Dict[str, Any] = Depends(require_admin)):
+    """
+    Tạo hoặc cập nhật cấu hình trò chơi:
+    - Kiểm tra cú pháp Python của referee_code bằng compile(..., 'exec').
+    - Kiểm tra sự tồn tại của 3 hàm bắt buộc: init_game, validate_move, apply_move.
+    - Lưu vào SQLite qua db.upsert_game.
+    """
+    # 1. Kiểm tra cú pháp Python
+    try:
+        code_obj = compile(req.referee_code, '<referee_validator>', 'exec')
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Lỗi cú pháp Python trong mã trọng tài: {str(e)}"
+        )
+
+    # 2. Kiểm tra sự tồn tại của 3 hàm giao thức
+    scope: Dict[str, Any] = {}
+    try:
+        exec(code_obj, scope)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Lỗi khi thực thi khởi tạo mã trọng tài: {str(e)}"
+        )
+
+    required_funcs = ["init_game", "validate_move", "apply_move"]
+    for fn in required_funcs:
+        if fn not in scope or not callable(scope[fn]):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Mã trọng tài thiếu hàm bắt buộc '{fn}' theo giao thức trọng tài."
+            )
+
+    # 3. Lưu vào Database
+    db.upsert_game(req.dict())
+    return {"success": True, "message": f"Đã lưu trò chơi '{req.name}' ({req.slug}) thành công!"}
+
+@router.post("/admin/games/test-referee")
+def test_admin_referee(req: RefereeTestReq, admin: Dict[str, Any] = Depends(require_admin)):
+    """
+    Chạy Dry-Run thử nghiệm mã nguồn trọng tài Python:
+    - Gọi init_game() lấy state ban đầu.
+    - Thử validate_move với nước đi giả lập {"row": 0, "col": 0}.
+    - Nếu hợp lệ, thử apply_move và trả về kết quả xem trước.
+    """
+    try:
+        code_obj = compile(req.referee_code, '<test_dry_run>', 'exec')
+        scope: Dict[str, Any] = {}
+        exec(code_obj, scope)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Lỗi biên dịch Python: {str(e)}"
+        )
+
+    for fn in ["init_game", "validate_move", "apply_move"]:
+        if fn not in scope or not callable(scope[fn]):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Thiếu hàm bắt buộc '{fn}' trong mã trọng tài."
+            )
+
+    try:
+        init_state = scope["init_game"]()
+        mock_move = {"row": 0, "col": 0}
+        is_valid = scope["validate_move"](init_state, mock_move, 0)
+        apply_res = None
+        if is_valid:
+            new_state, winner, reason = scope["apply_move"](init_state, mock_move, 0)
+            apply_res = {
+                "new_state": new_state,
+                "winner": winner,
+                "reason": reason
+            }
+
+        return {
+            "success": True,
+            "message": "Kiểm thử mã trọng tài thành công (Dry-Run hoàn tất).",
+            "init_state": init_state,
+            "mock_move": mock_move,
+            "is_valid": is_valid,
+            "apply_result": apply_res
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Lỗi khi thực thi dry-run: {str(e)}"
+        )
+
+@router.get("/admin/runtimes")
+def get_admin_runtimes(admin: Dict[str, Any] = Depends(require_admin)):
+    """Lấy danh sách các môi trường runtime biên dịch bot."""
+    return {"success": True, "runtimes": db.get_runtimes(enabled_only=False)}
+
+@router.post("/admin/runtimes")
+def upsert_admin_runtime(req: RuntimeUpsertReq, admin: Dict[str, Any] = Depends(require_admin)):
+    """Tạo hoặc cập nhật cấu hình runtime trình biên dịch bot."""
+    db.upsert_runtime(req.dict())
+    return {"success": True, "message": f"Đã lưu cấu hình runtime '{req.id}' thành công."}

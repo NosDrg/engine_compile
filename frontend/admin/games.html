@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dynamic Game &amp; Runtime Studio · Bot Arena Admin</title>
+  <link rel="icon" type="image/webp" href="../assets/logo.webp">
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/admin-page.css">
+  <style>
+    .studio-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .studio-grid { grid-template-columns: 1fr; }
+    }
+    .code-area {
+      font-family: "Fira Code", Consolas, Monaco, "Courier New", Courier, monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      background: #060911;
+      color: #38bdf8;
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      width: 100%;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+    .editor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .dryrun-panel {
+      margin-top: 12px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px dashed var(--accent);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      font-size: 13px;
+    }
+    .dryrun-panel pre {
+      max-height: 220px;
+      overflow-y: auto;
+      background: #030712;
+      padding: 8px;
+      border-radius: 4px;
+      color: #a7f3d0;
+    }
+    .protocol-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      background: rgba(129, 140, 248, 0.15);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 15px;
+    }
+    .nav-links a.active, .nav-links a:hover {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+    .form-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+    .form-row .form-group {
+      flex: 1;
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+<body class="has-navbar">
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a class="navbar-brand" href="/index.html">🎮 Bot Arena · Studio Quản Trị</a>
+    <div class="nav-links">
+      <a href="admin.html">Hệ thống &amp; Người dùng</a>
+      <a href="games.html" class="active">Game &amp; Runtime Studio</a>
+      <a href="../arena.html">Sàn đấu Arena</a>
+    </div>
+    <div class="navbar-actions" id="navbar-actions"></div>
+  </nav>
+
+  <main class="admin-page" style="max-width: 1200px;">
+    <header>
+      <h1>Dynamic Game &amp; Runtime Studio</h1>
+      <p>Cấu hình luật chơi mới, mã trọng tài Python theo giao thức Arena và quản lý trình biên dịch bot hoàn toàn qua Web.</p>
+    </header>
+
+    <div id="status-alert" role="status" style="margin-bottom: 16px; font-weight: 600;"></div>
+
+    <!-- Section 1: Quản lý Game -->
+    <section class="admin-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2>🛠 Cấu hình Trò chơi (Games)</h2>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <label for="select-game" style="font-weight: 600;">Chọn Game:</label>
+          <select id="select-game" class="form-control" style="width: auto; min-width: 220px;">
+            <option value="NEW">+ Tạo Game Mới</option>
+          </select>
+        </div>
+      </div>
+
+      <form id="game-form">
+        <div class="form-row">
+          <div class="form-group" style="flex: 1.2;">
+            <label for="game-name">Tên trò chơi</label>
+            <input type="text" id="game-name" class="form-control" placeholder="Ví dụ: Cờ Caro 9x9" required>
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label for="game-slug">Mã định danh (Slug - Khóa chính)</label>
+            <input type="text" id="game-slug" class="form-control" placeholder="ví dụ: caro_9x9" required>
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label for="game-board-type">Kiểu bàn cờ</label>
+            <select id="game-board-type" class="form-control">
+              <option value="grid_9x9">Lưới 9x9 (grid_9x9)</option>
+              <option value="grid_15x15">Lưới 15x15 (grid_15x15)</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex: 0.6; display: flex; flex-direction: column; justify-content: flex-end;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding-bottom: 10px;">
+              <input type="checkbox" id="game-is-active" checked>
+              <span>Kích hoạt</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="game-description">Mô tả trò chơi</label>
+          <textarea id="game-description" class="form-control" rows="2" placeholder="Quy tắc, điều kiện thắng thua ngắn gọn..."></textarea>
+        </div>
+
+        <div class="studio-grid">
+          <!-- Cột 1: Mã nguồn trọng tài -->
+          <div>
+            <div class="editor-header">
+              <div>
+                <strong>Mã Trọng Tài (Referee Protocol)</strong>
+                <span class="protocol-badge">Python 3.11</span>
+              </div>
+              <button type="button" id="btn-load-sample-referee" class="btn btn-ghost btn-sm">Mẫu trọng tài</button>
+            </div>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 6px;">
+              Bắt buộc định nghĩa đủ 3 hàm: <code>init_game()</code>, <code>validate_move(state, move, player)</code>, <code>apply_move(state, move, player)</code>.
+            </p>
+            <textarea id="game-referee-code" class="code-area" rows="22" spellcheck="false" placeholder="# Nhập mã nguồn trọng tài Python..."></textarea>
+
+            <div style="margin-top: 8px; display: flex; gap: 10px;">
+              <button type="button" id="btn-test-referee" class="btn btn-secondary btn-sm">🧪 Chạy thử Trọng tài (Dry-Run)</button>
+            </div>
+
+            <!-- Panel hiển thị kết quả Dry-Run -->
+            <div id="dryrun-panel" class="dryrun-panel" style="display: none;">
+              <strong>Kết quả kiểm thử trọng tài:</strong>
+              <div id="dryrun-status" style="margin: 4px 0; font-weight: bold;"></div>
+              <pre id="dryrun-json"></pre>
+            </div>
+          </div>
+
+          <!-- Cột 2: Mã nguồn bot mẫu -->
+          <div>
+            <div class="editor-header">
+              <div>
+                <strong>Mã Nguồn Bot Mẫu (Starter Bot Code)</strong>
+                <span class="protocol-badge">Thí sinh</span>
+              </div>
+              <button type="button" id="btn-load-sample-bot" class="btn btn-ghost btn-sm">Mẫu bot</button>
+            </div>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 6px;">
+              Mã khởi tạo nạp sẵn cho thí sinh khi chọn trò chơi này tại Sàn đấu. Đọc state qua <code>sys.stdin</code> và xuất move qua <code>print(json.dumps(...))</code>.
+            </p>
+            <textarea id="game-starter-code" class="code-area" rows="22" spellcheck="false" placeholder="# Nhập mã bot mẫu cho thí sinh..."></textarea>
+          </div>
+        </div>
+
+        <div style="margin-top: 20px; display: flex; gap: 12px; align-items: center;">
+          <button type="submit" id="btn-save-game" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700;">💾 Lưu Trò Chơi</button>
+          <span id="save-status-msg" style="font-size: 14px;"></span>
+        </div>
+      </form>
+    </section>
+
+    <!-- Section 2: Quản lý Runtimes & Trình biên dịch -->
+    <section class="admin-card">
+      <h2>⚙️ Runtime Studio (Trình biên dịch &amp; Môi trường thực thi)</h2>
+      <p style="color: var(--text-muted); font-size: 14px;">
+        Định cấu hình các trình biên dịch bot mà không cần rebuild container. Placeholder hỗ trợ: <code>{source}</code>, <code>{bin}</code>, <code>{work_dir}</code>.
+      </p>
+
+      <div class="table-scroll" style="margin-top: 14px;">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Tên hiển thị</th>
+              <th>Đuôi mở rộng</th>
+              <th>Lệnh biên dịch (Compile)</th>
+              <th>Lệnh thực thi (Run)</th>
+              <th>Timeout (s)</th>
+              <th>RAM (MB)</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="runtimes-tbody">
+            <tr><td colspan="9">Đang tải danh sách runtime...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Form thêm/sửa runtime -->
+      <form id="runtime-form" style="margin-top: 20px; background: rgba(0,0,0,0.25); padding: 14px; border-radius: 8px; border: 1px solid var(--border-card);">
+        <h3 id="runtime-form-title" style="margin-bottom: 12px; font-size: 16px;">+ Thêm / Cập nhật Trình biên dịch (Runtime)</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="rt-id">Mã ID (vd: go, cpp, rust)</label>
+            <input type="text" id="rt-id" class="form-control" placeholder="vd: python" required>
+          </div>
+          <div class="form-group">
+            <label for="rt-name">Tên hiển thị</label>
+            <input type="text" id="rt-name" class="form-control" placeholder="vd: Go 1.22" required>
+          </div>
+          <div class="form-group">
+            <label for="rt-extension">Đuôi mở rộng (không kèm chấm)</label>
+            <input type="text" id="rt-extension" class="form-control" placeholder="vd: go" required>
+          </div>
+          <div class="form-group">
+            <label for="rt-timeout">Timeout (giây)</label>
+            <input type="number" id="rt-timeout" class="form-control" step="0.1" value="2.0" required>
+          </div>
+          <div class="form-group">
+            <label for="rt-memory">Giới hạn RAM (MB)</label>
+            <input type="number" id="rt-memory" class="form-control" value="128" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 1;">
+            <label for="rt-compile">Lệnh biên dịch (để trống nếu là thông dịch)</label>
+            <input type="text" id="rt-compile" class="form-control" placeholder="g++ -O3 {source} -o {bin}">
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label for="rt-run">Lệnh thực thi</label>
+            <input type="text" id="rt-run" class="form-control" placeholder="{bin} hoặc python {source}" required>
+          </div>
+          <div class="form-group" style="flex: 0.4; display: flex; align-items: flex-end; padding-bottom: 8px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="rt-is-enabled" checked>
+              <span>Kích hoạt</span>
+            </label>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <button type="submit" class="btn btn-secondary btn-sm">Lưu Runtime</button>
+          <button type="button" id="btn-reset-runtime" class="btn btn-ghost btn-sm">Làm mới form</button>
+          <span id="runtime-status-msg" style="font-size: 13px;"></span>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script type="module" src="../js/admin_games.js"></script>
+</body>
+</html>

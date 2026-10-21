@@ -140,6 +140,142 @@ class DatabaseManager:
                 )
             """)
 
+            # 7. Bảng môi trường thực thi (runtimes)
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS runtimes (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    extension TEXT NOT NULL,
+                    compile_cmd TEXT,
+                    run_cmd TEXT NOT NULL,
+                    timeout_sec REAL DEFAULT 2.0,
+                    memory_limit_mb INTEGER DEFAULT 128,
+                    is_enabled INTEGER DEFAULT 1
+                )
+            ''')
+
+            runtime_count = cursor.execute('SELECT COUNT(*) FROM runtimes').fetchone()[0]
+            if runtime_count == 0:
+                cursor.executemany('''
+                    INSERT INTO runtimes (id, name, extension, compile_cmd, run_cmd, timeout_sec, memory_limit_mb, is_enabled)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', [
+                    ('python', 'Python 3.11', 'py', '', 'python {source}', 2.0, 128, 1),
+                    ('cpp', 'C++ (GCC)', 'cpp', 'g++ -O3 {source} -o {bin}', '{bin}', 2.0, 128, 1)
+                ])
+
+            # 8. Bảng trò chơi động (games)
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS games (
+                    slug TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    board_type TEXT DEFAULT 'grid_9x9',
+                    referee_code TEXT,
+                    starter_bot_code TEXT,
+                    is_active INTEGER DEFAULT 1,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+
+            game_count = cursor.execute('SELECT COUNT(*) FROM games').fetchone()[0]
+            if game_count == 0:
+                default_referee_code = '''# referee.py - Default Caro 9x9 Referee
+def init_game() -> dict:
+    return {
+        "board": [[None for _ in range(9)] for _ in range(9)],
+        "turn": 0,
+        "max_turns": 81
+    }
+
+def validate_move(state: dict, move: dict, player_slot: int) -> bool:
+    if not isinstance(move, dict):
+        return False
+    row = move.get("row")
+    col = move.get("col")
+    if row is None or col is None:
+        return False
+    if not isinstance(row, int) or not isinstance(col, int):
+        return False
+    if not (0 <= row < 9 and 0 <= col < 9):
+        return False
+    board = state.get("board", [])
+    if row >= len(board) or col >= len(board[row]):
+        return False
+    return board[row][col] is None
+
+def apply_move(state: dict, move: dict, player_slot: int) -> tuple:
+    import copy
+    new_state = copy.deepcopy(state)
+    r = int(move["row"])
+    c = int(move["col"])
+    new_state["board"][r][c] = player_slot
+    new_state["turn"] = int(new_state.get("turn", 0)) + 1
+    
+    board = new_state["board"]
+    size = len(board)
+    directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
+    for dr, dc in directions:
+        count = 1
+        nr, nc = r + dr, c + dc
+        while 0 <= nr < size and 0 <= nc < size and board[nr][nc] == player_slot:
+            count += 1
+            nr += dr
+            nc += dc
+        nr, nc = r - dr, c - dc
+        while 0 <= nr < size and 0 <= nc < size and board[nr][nc] == player_slot:
+            count += 1
+            nr -= dr
+            nc -= dc
+        if count >= 5:
+            return new_state, player_slot, f"Người chơi {player_slot} nối thành công 5 điểm liên tiếp!"
+
+    if new_state["turn"] >= int(new_state.get("max_turns", 81)):
+        return new_state, -1, "Hòa cờ - Đã hết lượt đi tối đa."
+
+    return new_state, None, "Nước đi hợp lệ."
+'''
+                default_starter_code = '''import sys
+import json
+import random
+
+def main():
+    while True:
+        line = sys.stdin.readline()
+        if not line:
+            break
+        try:
+            state = json.loads(line.strip())
+            board = state.get("board", [])
+            empty_cells = []
+            for r in range(len(board)):
+                for c in range(len(board[r])):
+                    if board[r][c] is None:
+                        empty_cells.append({"row": r, "col": c})
+            if empty_cells:
+                move = random.choice(empty_cells)
+                print(json.dumps(move), flush=True)
+            else:
+                print(json.dumps({"action": "PASS"}), flush=True)
+        except Exception:
+            print(json.dumps({"action": "PASS"}), flush=True)
+
+if __name__ == "__main__":
+    main()
+'''
+                cursor.execute('''
+                    INSERT INTO games (slug, name, description, board_type, referee_code, starter_bot_code, is_active)
+                    VALUES (?, ?, ?, ?, ?, ?, 1)
+                ''', (
+                    'default',
+                    'Caro 9x9 Arena',
+                    'Trận chiến thuật toán cờ caro 9x9 tiêu chuẩn',
+                    'grid_9x9',
+                    default_referee_code,
+                    default_starter_code
+                ))
+
             # Tạo tài khoản admin mặc định nếu chưa có
             admin_user = os.getenv("ADMIN_USERNAME", "admin")
             admin_pass = os.getenv("ADMIN_PASSWORD", "admin123")
@@ -324,4 +460,105 @@ class DatabaseManager:
                 match_id, user0_id, user1_id, winner_user_id, reason,
                 bot0_ram, bot1_ram, replay_str
             ))
+            conn.commit()
+
+    def get_active_games(self) -> List[Dict[str, Any]]:
+        """Lấy danh sách tất cả game đang kích hoạt (is_active = 1)."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            rows = cursor.execute('''
+                SELECT slug, name, description, board_type, starter_bot_code, is_active, created_at, updated_at
+                FROM games
+                WHERE is_active = 1
+                ORDER BY created_at ASC
+            ''').fetchall()
+            return [dict(r) for r in rows]
+
+    def get_all_games(self) -> List[Dict[str, Any]]:
+        """Lấy toàn bộ danh sách game cho trang quản trị (Admin)."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            rows = cursor.execute('''
+                SELECT slug, name, description, board_type, referee_code, starter_bot_code, is_active, created_at, updated_at
+                FROM games
+                ORDER BY created_at DESC
+            ''').fetchall()
+            return [dict(r) for r in rows]
+
+    def get_game_by_slug(self, slug: str) -> Optional[Dict[str, Any]]:
+        """Lấy chi tiết 1 game bao gồm referee_code."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            row = cursor.execute('SELECT * FROM games WHERE slug = ?', (slug,)).fetchone()
+            return dict(row) if row else None
+
+    def upsert_game(self, data: Dict[str, Any]) -> None:
+        """Chèn hoặc cập nhật game theo cú pháp ON CONFLICT(slug) DO UPDATE."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO games (slug, name, description, board_type, referee_code, starter_bot_code, is_active, created_at, updated_at)
+                VALUES (:slug, :name, :description, :board_type, :referee_code, :starter_bot_code, :is_active, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ON CONFLICT(slug) DO UPDATE SET
+                    name = excluded.name,
+                    description = excluded.description,
+                    board_type = excluded.board_type,
+                    referee_code = excluded.referee_code,
+                    starter_bot_code = excluded.starter_bot_code,
+                    is_active = excluded.is_active,
+                    updated_at = CURRENT_TIMESTAMP
+            ''', {
+                'slug': data.get('slug'),
+                'name': data.get('name'),
+                'description': data.get('description', ''),
+                'board_type': data.get('board_type', 'grid_9x9'),
+                'referee_code': data.get('referee_code', ''),
+                'starter_bot_code': data.get('starter_bot_code', ''),
+                'is_active': 1 if data.get('is_active', 1) in (1, True, '1', 'true') else 0
+            })
+            conn.commit()
+
+    def get_runtimes(self, enabled_only: bool = False) -> List[Dict[str, Any]]:
+        """Lấy danh sách cấu hình runtimes/compilers."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            query = 'SELECT * FROM runtimes'
+            if enabled_only:
+                query += ' WHERE is_enabled = 1'
+            query += ' ORDER BY id ASC'
+            rows = cursor.execute(query).fetchall()
+            return [dict(r) for r in rows]
+
+    def get_runtime_by_id(self, runtime_id: str) -> Optional[Dict[str, Any]]:
+        """Lấy cấu hình của một runtime theo id."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            row = cursor.execute('SELECT * FROM runtimes WHERE id = ?', (runtime_id,)).fetchone()
+            return dict(row) if row else None
+
+    def upsert_runtime(self, data: Dict[str, Any]) -> None:
+        """Chèn hoặc cập nhật runtime theo ON CONFLICT(id) DO UPDATE."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO runtimes (id, name, extension, compile_cmd, run_cmd, timeout_sec, memory_limit_mb, is_enabled)
+                VALUES (:id, :name, :extension, :compile_cmd, :run_cmd, :timeout_sec, :memory_limit_mb, :is_enabled)
+                ON CONFLICT(id) DO UPDATE SET
+                    name = excluded.name,
+                    extension = excluded.extension,
+                    compile_cmd = excluded.compile_cmd,
+                    run_cmd = excluded.run_cmd,
+                    timeout_sec = excluded.timeout_sec,
+                    memory_limit_mb = excluded.memory_limit_mb,
+                    is_enabled = excluded.is_enabled
+            ''', {
+                'id': data.get('id'),
+                'name': data.get('name'),
+                'extension': data.get('extension', '').lstrip('.'),
+                'compile_cmd': data.get('compile_cmd', ''),
+                'run_cmd': data.get('run_cmd', ''),
+                'timeout_sec': float(data.get('timeout_sec', 2.0)),
+                'memory_limit_mb': int(data.get('memory_limit_mb', 128)),
+                'is_enabled': 1 if data.get('is_enabled', 1) in (1, True, '1', 'true') else 0
+            })
             conn.commit()

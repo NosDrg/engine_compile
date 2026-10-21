@@ -71,9 +71,15 @@ export const api = {
   createTournament: (payload) => request('/admin/tournaments', { method: 'POST', body: JSON.stringify(payload) }),
   startTournament: (id) => request('/admin/tournaments/' + encodeURIComponent(id) + '/start', { method: 'POST' }),
   retryTournamentGame: (tournamentId, gameId) => request('/admin/tournaments/' + encodeURIComponent(tournamentId) + '/games/' + encodeURIComponent(gameId) + '/retry', { method: 'POST' }),
-  runPractice: (sourceCode, language, opponentType = 'random_bot') => 
-    request('/matches/practice', { 
-      method: 'POST', 
-      body: JSON.stringify({ source_code: sourceCode, language: language, opponent_type: opponentType }) 
+  getActiveGames: () => request('/games/active'),
+  adminGetGames: () => request('/admin/games'),
+  adminSaveGame: (gameData) => request('/admin/games', { method: 'POST', body: JSON.stringify(gameData) }),
+  adminTestReferee: (refereeCode) => request('/admin/games/test-referee', { method: 'POST', body: JSON.stringify({ referee_code: refereeCode }) }),
+  adminGetRuntimes: () => request('/admin/runtimes'),
+  adminSaveRuntime: (runtimeData) => request('/admin/runtimes', { method: 'POST', body: JSON.stringify(runtimeData) }),
+  runPractice: (sourceCode, language, opponentType = 'random_bot', gameSlug = 'default') =>
+    request('/matches/practice', {
+      method: 'POST',
+      body: JSON.stringify({ source_code: sourceCode, language: language, opponent_type: opponentType, game_slug: gameSlug })
     }),
 };
