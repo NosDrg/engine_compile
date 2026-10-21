@@ -893,3 +893,111 @@ tr:last-child td { border-bottom: none; }
 .taskbar-badge[hidden] {
   display: none !important;
 }
+
+/* ==========================================================================
+   BỘ ĐIỀU KHIỂN REPLAY & PLAYGROUND (MATCH CONTROL PANEL)
+   ========================================================================== */
+.match-control-panel {
+  width: 100%;
+  margin-top: 16px;
+  background: var(--bg-card, #161b22);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 10px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Thanh trượt tua thời gian */
+.timeline-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+  color: var(--text-muted, #8b949e);
+}
+
+.slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: #30363d;
+  outline: none;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.slider:hover {
+  background: #484f58;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent-color, #38bdf8);
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.6);
+}
+
+/* Hàng nút bấm điều khiển */
+.playback-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.speed-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--text-muted, #8b949e);
+}
+
+.select-sm {
+  background: #0d1117;
+  color: #c9d1d9;
+  border: 1px solid #30363d;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Hộp log nước đi */
+.move-status-box {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  color: #58a6ff;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+}
+
+/* Nút Accent cho Đấu Thử */
+.btn-accent {
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: #ffffff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btn-accent:hover {
+  opacity: 0.9;
+}

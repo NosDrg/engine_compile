@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Thi đấu – Bot Arena</title>
-  <link rel="stylesheet" href="css/main.css">
   <link rel="icon" type="image/webp" href="assets/logo.webp">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/board.css">
   <link rel="stylesheet" href="css/arena-page.css">
 </head>
 <body class="has-navbar">
@@ -135,6 +135,36 @@
           <button id="btn-rematch" class="btn btn-secondary btn-sm mt-2 rematch-button">Thách đấu lại</button>
         </div>
       </section>
+
+      <div class="match-control-panel">
+        <!-- Thanh tua lượt đi (Turn Slider) -->
+        <div class="timeline-container">
+          <span id="turn-current-label">Lượt: 0</span>
+          <input type="range" id="replay-slider" min="0" max="0" value="0" class="slider" disabled />
+          <span id="turn-max-label">/ 0</span>
+        </div>
+
+        <div class="playback-actions">
+          <button id="btn-prev-turn" class="btn btn-secondary" title="Lượt trước" disabled>⏮</button>
+          <button id="btn-play-pause" class="btn btn-primary" title="Phát / Tạm dừng" disabled>▶ Phát</button>
+          <button id="btn-next-turn" class="btn btn-secondary" title="Lượt kế tiếp" disabled>⏭</button>
+
+          <div class="speed-selector">
+            <label for="playback-speed">Tốc độ:</label>
+            <select id="playback-speed" class="select-sm">
+              <option value="1200">0.5x</option>
+              <option value="600" selected>1.0x</option>
+              <option value="300">2.0x</option>
+              <option value="150">4.0x</option>
+            </select>
+          </div>
+
+          <button id="btn-practice-duel" class="btn btn-accent">🎮 Đấu thử với Máy</button>
+        </div>
+
+        <div id="move-status-box" class="move-status-box">Sẵn sàng.</div>
+      </div>
+
     </div>
 
     <section class="arena-panel arena-extras">
