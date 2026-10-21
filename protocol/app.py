@@ -2,19 +2,20 @@
 import os
 import sys
 import jwt
+from fastapi import FastAPI, Request, HTTPException # type: ignore
+from fastapi.responses import FileResponse, RedirectResponse # type: ignore
+from fastapi.middleware.cors import CORSMiddleware # type: ignore
+from fastapi.staticfiles import StaticFiles # type: ignore
+
+from config import FRONTEND_DIR
+from routers.auth import JWT_SECRET, JWT_ALGORITHM
+from routers import submissions, matches, auth, stats, notifications, admin, forum, teams, missions
+
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 if CURRENT_DIR not in sys.path:
     sys.path.insert(0, CURRENT_DIR)
 
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import FileResponse, RedirectResponse
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-
-from config import FRONTEND_DIR
-from routers.auth import JWT_SECRET, JWT_ALGORITHM
-from routers import submissions, matches, auth, stats, notifications, admin, forum, teams, missions
 
 app = FastAPI(title="Match Arena API", version="1.0.0")
 

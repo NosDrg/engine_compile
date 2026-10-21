@@ -1,5 +1,5 @@
 # protocol/routers/notifications.py
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends # type: ignore
 from routers.auth import get_current_user
 from pydantic import BaseModel
 from typing import Optional, Dict, Any

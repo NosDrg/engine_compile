@@ -3,7 +3,7 @@ import json
 import jwt
 from datetime import datetime
 from typing import List, Optional
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Request, Query
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Request, Query # type: ignore
 
 from database.db_manager import DatabaseManager
 from config import DEFAULT_DB_PATH

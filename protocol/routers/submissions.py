@@ -1,7 +1,7 @@
 # protocol/routers/submissions.py
 import re
 from typing import Optional, Dict, Any
-from fastapi import APIRouter, HTTPException, Request, Depends, status
+from fastapi import APIRouter, HTTPException, Request, Depends, status # type: ignore
 from pydantic import BaseModel
 
 from database.db_manager import DatabaseManager
@@ -110,4 +110,6 @@ def activate_submission(sub_id: str, user: Dict[str, Any] = Depends(get_current_
         if not sub:
             raise HTTPException(status_code=404, detail="Không tìm thấy phiên bản submission này.")
         if sub["user_id"] != user["id"] and user.get("role") != "admin":
-            raise HTTPException(status_code=403, detail="Bạn không có quyền kích hoạt bot
+            raise HTTPException(status_code=403, detail="Bạn không có quyền kích hoạt bot của người khác.")
+
+    return {"success": True, "message": f"Đã kích hoạt phiên bản {sub_id}"}

@@ -1,6 +1,6 @@
 # protocol/routers/teams.py
 from typing import Dict, Any
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends # type: ignore
 from pydantic import BaseModel
 from routers.auth import get_current_user
 

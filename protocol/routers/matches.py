@@ -1,6 +1,6 @@
 # protocol/routers/matches.py
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status # type: ignore
 from routers.auth import get_current_user
 from pydantic import BaseModel
 from database.db_manager import DatabaseManager
@@ -77,3 +77,39 @@ def get_match_replay(match_id: str):
         },
         "replay": match_data["replay_data"]
     }
+
+class PracticeReq(BaseModel):
+    language: str
+    source_code: str
+    opponent_type: Optional[str] = "random_bot" # 'random_bot' hoặc 'greedy_bot'
+
+@router.post("/practice")
+def run_practice_match(req: PracticeReq, user: dict = Depends(get_current_user)):
+    """
+    Chế độ đấu thử:
+    - Chạy bot của thí sinh đối đầu với một bot mẫu.
+    - Không lưu kết quả vào bảng xếp hạng.
+    - Trả về chi tiết từng lượt và log TLE/MLE/RTE nếu có lỗi.
+    """
+    lang = req.language.strip().lower()
+    source_code = req.source_code
+
+    if not source_code.strip():
+        raise HTTPException(status_code=400, detail="Mã nguồn không được để trống.")
+
+    # 1. Kiểm tra an toàn tĩnh trước
+    from routers.submissions import check_code_safety
+    check_code_safety(source_code)
+
+    # 2. Gọi match_service chạy trận tập luyện
+    res = match_service.run_practice_session(
+        username=user["username"],
+        language=lang,
+        source_code=source_code,
+        bot_type=req.opponent_type or "random_bot"
+    )
+
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("error", "Lỗi trong quá trình chạy thử."))
+
+    return res

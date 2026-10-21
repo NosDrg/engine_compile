@@ -43,5 +43,8 @@ ENV PYTHONUNBUFFERED=1 \
 
 EXPOSE 8000
 
+RUN useradd -m -u 1001 -s /bin/bash arena_runner \
+    && chown -R arena_runner:arena_runner /app/protocol/save/bots
+
 # Chạy Uvicorn hỗ trợ biến $PORT động trên cloud (Render/Fly.io)
 CMD ["sh", "-c", "uvicorn app:app --app-dir protocol --host 0.0.0.0 --port ${PORT:-8000}"]

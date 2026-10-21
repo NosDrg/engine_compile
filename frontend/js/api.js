@@ -71,4 +71,9 @@ export const api = {
   createTournament: (payload) => request('/admin/tournaments', { method: 'POST', body: JSON.stringify(payload) }),
   startTournament: (id) => request('/admin/tournaments/' + encodeURIComponent(id) + '/start', { method: 'POST' }),
   retryTournamentGame: (tournamentId, gameId) => request('/admin/tournaments/' + encodeURIComponent(tournamentId) + '/games/' + encodeURIComponent(gameId) + '/retry', { method: 'POST' }),
+  runPractice: (sourceCode, language, opponentType = 'random_bot') => 
+    request('/matches/practice', { 
+      method: 'POST', 
+      body: JSON.stringify({ source_code: sourceCode, language: language, opponent_type: opponentType }) 
+    }),
 };

@@ -3,7 +3,7 @@ import shutil
 import psutil
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status # type: ignore
 from routers.auth import get_current_user
 
 from database.db_manager import DatabaseManager

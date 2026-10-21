@@ -162,7 +162,7 @@ class DatabaseManager:
                 return row["id"]
             cursor.execute("INSERT INTO users (username, display_name) VALUES (?, ?)", (username, username))
             conn.commit()
-            return cursor.lastrowid
+            return cursor.lastrowid # type: ignore
 
 
     # protocol/database/db_manager.py
@@ -251,14 +251,23 @@ class DatabaseManager:
             )
             conn.commit()
 
-    def save_submission(self, sub_id: str, user_id: int, language: str, source_code: str, status: str = "PENDING"):
-        """Lưu bản nộp code bot mới."""
+    def save_submission(
+        self, 
+        sub_id: str, 
+        user_id: int, 
+        language: str, 
+        source_code: str, 
+        status: str = "VALID", 
+        error_log: Optional[str] = None,
+        **kwargs
+    ):
+        """Lưu bài nộp của thí sinh kèm log lỗi cú pháp nếu có."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO submissions (id, user_id, language, source_code, status)
-                VALUES (?, ?, ?, ?, ?)
-            """, (sub_id, user_id, language, source_code, status))
+                INSERT INTO submissions (id, user_id, language, source_code, status, error_log)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (sub_id, user_id, language, source_code, status, error_log))
             conn.commit()
 
     def update_submission_status(self, sub_id: str, status: str, error_log: Optional[str] = None):
@@ -283,22 +292,36 @@ class DatabaseManager:
             """, (user_id,)).fetchone()
             return dict(row) if row else None
 
-    def save_match(self, match_id: str, user0_id: int, user1_id: int, winner_user_id: Optional[int],
-                   user0_lang: str, user1_lang: str, bot0_ram_mb: float, bot1_ram_mb: float,
-                   reason: str, replay_data: Any):
-        """Lưu kết quả ván đấu và JSON replay."""
-        replay_str = json.dumps(replay_data) if not isinstance(replay_data, str) else replay_data
+    def save_match(
+        self,
+        match_id: str,
+        user0_id: int,
+        user1_id: int,
+        winner_user_id: Optional[int] = None,
+        reason: str = "UNKNOWN",
+        bot0_ram: float = 0.0,
+        bot1_ram: float = 0.0,
+        replay_data: Any = None,
+        sub0_id: Optional[str] = None,
+        sub1_id: Optional[str] = None,
+        sub0_code_hash: Optional[str] = None,
+        sub1_code_hash: Optional[str] = None,
+        **kwargs
+    ):
+        """Lưu lịch sử trận đấu và replay."""
+        import json
+        replay_str = json.dumps(replay_data) if isinstance(replay_data, (list, dict)) else str(replay_data or "")
+
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
                 INSERT INTO matches (
-                    id, user0_id, user1_id, winner_user_id,
-                    user0_lang, user1_lang, bot0_ram_mb, bot1_ram_mb,
-                    reason, replay_data
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    id, user0_id, user1_id, winner_user_id, reason,
+                    bot0_ram_mb, bot1_ram_mb, replay_data
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                match_id, user0_id, user1_id, winner_user_id,
-                user0_lang, user1_lang, bot0_ram_mb, bot1_ram_mb,
-                reason, replay_str
+                match_id, user0_id, user1_id, winner_user_id, reason,
+                bot0_ram, bot1_ram, replay_str
             ))
             conn.commit()

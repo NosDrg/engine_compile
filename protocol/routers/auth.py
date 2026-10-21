@@ -4,7 +4,7 @@ import hashlib
 import datetime
 from typing import Optional, Dict, Any
 import jwt
-from fastapi import APIRouter, HTTPException, Response, Request, Depends, status
+from fastapi import APIRouter, HTTPException, Response, Request, Depends, status # type: ignore
 from pydantic import BaseModel, ConfigDict
 
 from database.db_manager import DatabaseManager
@@ -17,12 +17,11 @@ JWT_SECRET = os.getenv("JWT_SECRET", "super_secret_match_arena_jwt_key_2026")
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 7
 
-def create_access_token(user_id: int, username: str, role: str = "player") -> str:
-    """Tạo JWT Token có thời hạn và chữ ký an toàn."""
+def create_access_token(user_id: Optional[int], username: str, role: str = "player") -> str:
     expire = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
     payload = {
         "sub": username,
-        "uid": user_id,
+        "uid": int(user_id or 0),
         "role": role,
         "exp": expire,
         "iat": datetime.datetime.now(datetime.timezone.utc)
@@ -45,7 +44,10 @@ def get_current_user(request: Request) -> Dict[str, Any]:
 
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        username: str = payload.get("sub")
+        raw_username = payload.get("sub")
+        if not raw_username or not isinstance(raw_username, str):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token không hợp lệ.")
+        username: str = raw_username        
         if not username:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token không hợp lệ.")
     except jwt.ExpiredSignatureError:
@@ -119,7 +121,8 @@ def register(req: RegisterReq, response: Response):
             VALUES (?, ?, ?, 'player')
         """, (username, pwd_hash, display_name))
         conn.commit()
-        user_id = cursor.lastrowid
+        user_id = int(cursor.lastrowid or 0)
+        token = create_access_token(user_id=user_id, username=username, role="player")
 
     # Cấp token JWT
     token = create_access_token(user_id=user_id, username=username, role="player")
