@@ -91,20 +91,35 @@ def register(req: RegisterReq, response: Response):
 @router.post("/login")
 def login(req: LoginReq, response: Response):
     username = req.get_account_name()
+    password = (req.password or "").strip()
+
     if not username:
         raise HTTPException(status_code=400, detail="Vui lòng nhập tên tài khoản.")
+    if not password:
+        raise HTTPException(status_code=400, detail="Vui lòng nhập mật khẩu.")
 
     user = db.get_user_by_username(username)
     if not user:
         raise HTTPException(status_code=401, detail="Tài khoản hoặc mật khẩu không chính xác.")
 
-    # Xác thực mật khẩu
-    if user.get("password_hash"):
-        input_hash = hashlib.sha256(req.password.encode()).hexdigest()
-        if user["password_hash"] != input_hash:
-            raise HTTPException(status_code=401, detail="Tài khoản hoặc mật khẩu không chính xác.")
+    stored_hash = user.get("password_hash")
+    if not stored_hash:
+        raise HTTPException(
+            status_code=401, 
+            detail="Tài khoản chưa thiết lập mật khẩu hợp lệ. Vui lòng đăng ký lại hoặc liên hệ admin."
+        )
 
-    response.set_cookie(key="arena_user", value=username, httponly=False, max_age=86400 * 7, samesite="lax")
+    input_hash = hashlib.sha256(password.encode("utf-8")).hexdigest()
+    if stored_hash != input_hash:
+        raise HTTPException(status_code=401, detail="Tài khoản hoặc mật khẩu không chính xác.")
+
+    response.set_cookie(
+        key="arena_user",
+        value=username,
+        httponly=False,
+        max_age=86400 * 7,
+        samesite="lax"
+    )
 
     return {
         "success": True,

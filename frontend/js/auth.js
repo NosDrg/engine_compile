@@ -45,7 +45,7 @@ export function renderNavAuth(user = getUser()) {
       ? user.extra_nav.map(item => 
           `<a href="${escapeHtml(item.path)}" class="nav-user-menu-link">${escapeHtml(item.title)}</a>`
         ).join('')
-      : (user.role === 'admin' ? '<a href="/admin.html" class="nav-user-menu-link">Quản trị viên</a>' : '');
+      : (user.role === 'admin' ? '<a href="admin/admin.html" class="nav-user-menu-link">Quản trị viên</a>' : '');
 
     actions.innerHTML = `
       <div class="nav-user-dropdown" id="nav-user-dropdown-wrap">
