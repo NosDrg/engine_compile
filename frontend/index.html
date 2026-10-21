@@ -6,23 +6,23 @@
   <meta name="description" content="Bot Arena – Đấu trường AI Kéo Búa Bao. Viết thuật toán, nộp bot, thách đấu với các thí sinh khác trên lưới 9×9.">
   <title>Bot Arena – Trang chủ</title>
   <link rel="stylesheet" href="css/main.css">
-
-<link rel="stylesheet" href="css/index-page.css">
+  <link rel="stylesheet" href="css/index-page.css">
+  <link rel="icon" type="image/webp" href="assets/logo.webp">
 </head>
 <body class="has-navbar">
   <!-- Navbar -->
   <nav class="navbar" id="main-navbar">
     <a href="index.html" class="navbar-brand" id="nav-brand">
-
       Bot Arena
     </a>
     <ul class="navbar-nav">
-      <li><a href="index.html" class="active" id="nav-home"> Trang chủ</a></li>
-      <li><a href="arena.html" id="nav-arena"> Thi đấu</a></li>
-      <li><a href="leaderboard.html" id="nav-lb"> Leaderboard</a></li>
-      <li><a href="guide.html" id="nav-guide"> Hướng dẫn</a></li>
+      <li><a href="index.html" class="active" id="nav-home">Trang chủ</a></li>
+      <li><a href="arena.html" id="nav-arena">Thi đấu</a></li>
+      <li><a href="leaderboard.html" id="nav-lb">Leaderboard</a></li>
+      <li><a href="guide.html" id="nav-guide">Hướng dẫn</a></li>
     </ul>
     <div class="navbar-actions" id="navbar-actions">
+      <!-- Mặc định khi chưa tải xong JS hoặc chưa đăng nhập -->
       <a href="login.html" class="btn btn-ghost btn-sm" id="btn-nav-login">Đăng nhập</a>
       <a href="register.html" class="btn btn-primary btn-sm" id="btn-nav-register">Đăng ký</a>
     </div>
@@ -32,12 +32,12 @@
     <!-- Hero -->
     <section class="hero">
       <div class="hero-glow"></div>
-      <div class="hero-badge"> Đấu trường AI · Lưới 9×9</div>
+      <div class="hero-badge">Đấu trường AI · Lưới 9×9</div>
       <h1 class="gradient-text">Lập trình Bot.<br>Thách đấu bất kỳ ai.</h1>
       <p>Viết thuật toán Kéo-Búa-Bao bằng Python, C++ hoặc Java. Nộp bot của bạn và chinh phục bảng xếp hạng toàn cầu.</p>
       <div class="hero-cta">
-        <a href="register.html" class="btn btn-primary btn-lg" id="hero-btn-register"> Bắt đầu ngay</a>
-        <a href="guide.html" class="btn btn-secondary btn-lg" id="hero-btn-guide"> Xem hướng dẫn</a>
+        <a href="register.html" class="btn btn-primary btn-lg" id="hero-btn-register">Bắt đầu ngay</a>
+        <a href="guide.html" class="btn btn-secondary btn-lg" id="hero-btn-guide">Xem hướng dẫn</a>
       </div>
       <div class="hero-img-wrapper">
         <img src="assets/hero_banner.jpg" alt="Bot Arena game board preview" id="hero-banner-img">
@@ -70,32 +70,26 @@
       </div>
       <div class="features-grid">
         <div class="feature-card">
-
           <h3>AI thuật toán thực sự</h3>
           <p>Bot được chạy trực tiếp bằng code bạn viết — Python, C++, Java. Không giới hạn chiến thuật.</p>
         </div>
         <div class="feature-card">
-
           <h3>Giới hạn tài nguyên</h3>
           <p>Engine giới hạn thời gian phản hồi và một số tài nguyên của bot. Nền tảng chưa có sandbox hệ điều hành đầy đủ.</p>
         </div>
         <div class="feature-card">
-
           <h3>Chiến thuật sâu sắc</h3>
           <p>Lưới 9×9, quân Búa-Bao-Kéo chiếm lĩnh căn cứ. Dễ học nhưng khó master.</p>
         </div>
         <div class="feature-card">
-
           <h3>Replay trực quan</h3>
           <p>Xem lại từng nước đi của trận đấu với animation từng lượt. Phân tích chiến thuật dễ dàng.</p>
         </div>
         <div class="feature-card">
-
           <h3>Leaderboard thời gian thực</h3>
           <p>Xếp hạng toàn cầu cập nhật tức thì. Chinh phục vị trí #1 bảng xếp hạng.</p>
         </div>
         <div class="feature-card">
-
           <h3>Tài khoản bảo mật</h3>
           <p>Đăng ký tài khoản, quản lý nhiều phiên bản bot, theo dõi lịch sử trận đấu.</p>
         </div>
@@ -135,11 +129,11 @@
     <!-- Leaderboard Preview -->
     <section class="lb-preview">
       <div class="section-header">
-        <h2> Bảng xếp hạng</h2>
+        <h2>Bảng xếp hạng</h2>
         <p>Top những thí sinh xuất sắc nhất</p>
       </div>
+      <p class="demo-data-notice" id="home-demo-notice" hidden>DỮ LIỆU MẪU · 10 THÍ SINH</p>
       <div class="lb-preview-inner" id="lb-preview-list">
-        <!-- loaded by JS -->
         <div class="flex-center home-loading-state">
           <span class="spinner"></span>&nbsp; Đang tải...
         </div>
@@ -154,7 +148,7 @@
       <div class="cta-box">
         <h2 class="gradient-text">Sẵn sàng thi đấu?</h2>
         <p>Tham gia ngay hôm nay và chứng minh thuật toán của bạn là số 1!</p>
-        <a href="register.html" class="btn btn-primary btn-lg" id="cta-btn-join"> Tham gia miễn phí</a>
+        <a href="register.html" class="btn btn-primary btn-lg" id="cta-btn-join">Tham gia miễn phí</a>
       </div>
     </section>
 

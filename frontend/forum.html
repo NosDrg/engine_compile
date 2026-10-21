@@ -1,4 +1,26 @@
 <!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Diễn đàn · Bot Arena</title><link rel="stylesheet" href="css/main.css"><link rel="stylesheet" href="css/forum-page.css">
+<html lang="vi"><head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Diễn đàn · Bot Arena</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="icon" type="image/webp" href="assets/logo.webp">
+    <link rel="stylesheet" href="css/forum-page.css">
 </head>
-<body class="has-navbar"><nav class="navbar"><a class="navbar-brand" href="/"> Bot Arena</a><div class="navbar-actions" id="navbar-actions"></div></nav><main class="wrap"><h1>Diễn đàn người chơi</h1><p class="state" id="state" role="status">Đang kết nối…</p><button class="btn btn-secondary btn-sm" id="load-older" type="button" hidden>Tải tin cũ hơn</button><section class="chat" id="chat" aria-live="polite" aria-label="Tin nhắn diễn đàn"></section><form class="compose" id="compose"><input class="form-control" id="message" maxlength="1000" placeholder="Viết tin nhắn (tối đa 1000 ký tự)" required><button class="btn btn-primary">Gửi</button></form></main><script type="module" src="js/forum.js"></script></body></html>
+<body class="has-navbar">
+    <nav class="navbar">
+        <a class="navbar-brand" href="/"> Bot Arena</a>
+        <div class="navbar-actions" id="navbar-actions"></div>
+    </nav>
+    <main class="wrap">
+        <h1>Diễn đàn người chơi</h1>
+        <p class="state" id="state" role="status">Đang kết nối…</p>
+        <button class="btn btn-secondary btn-sm" id="load-older" type="button" hidden>Tải tin cũ hơn</button>
+        <section class="chat" id="chat" aria-live="polite" aria-label="Tin nhắn diễn đàn"></section>
+        <form class="compose" id="compose">
+            <input class="form-control" id="message" maxlength="1000" placeholder="Viết tin nhắn (tối đa 1000 ký tự)" required>
+            <button class="btn btn-primary">Gửi</button>
+        </form>
+    </main>
+    <script type="module" src="js/forum.js"></script>
+</body>
+</html>

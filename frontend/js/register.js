@@ -23,8 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
     event.preventDefault();
     status.textContent = '';
     const password = document.getElementById('reg-password').value;
-    if (password.length < 12) {
-      status.textContent = 'Mật khẩu cần ít nhất 12 ký tự.';
+    if (password.length < 6) {
+      status.textContent = 'Mật khẩu cần ít nhất 6 ký tự.';
       return;
     }
     if (password !== document.getElementById('reg-confirm').value) {

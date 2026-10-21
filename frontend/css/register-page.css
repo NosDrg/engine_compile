@@ -19,8 +19,6 @@
   text-align: center;
   border-bottom: 1px solid var(--border-card);
 }
-.auth-header h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 6px; }
-.auth-header p  { font-size: 0.875rem; color: var(--text-muted); }
 .auth-body  { padding: 28px 36px; }
 .auth-footer {
   padding: 18px 36px;
@@ -28,20 +26,8 @@
   border-top: 1px solid var(--border-card);
   font-size: 0.875rem; color: var(--text-muted);
 }
-.auth-footer a { color: var(--accent); text-decoration: none; font-weight: 500; }
-.auth-footer a:hover { text-decoration: underline; }
 
-.input-icon-wrap { position: relative; }
 #reg-password, #reg-confirm { padding-right: 64px; }
-.input-icon-wrap .btn-eye {
-  position: absolute; right: 8px; top: 50%;
-  transform: translateY(-50%);
-  background: none; border: none;
-  color: var(--text-faint); cursor: pointer;
-  padding: 4px; font-size: 1rem;
-  min-width: 48px;
-  font-size: 0.8rem;
-}
 
 .password-strength {
   margin-top: 8px;
@@ -96,18 +82,8 @@
 .terms-row a { color: var(--accent); text-decoration: none; }
 .terms-row input { margin-top: 2px; }
 
-.back-home {
-  position: absolute; z-index: 2; top: 20px; left: 24px;
-  display: flex; align-items: center; gap: 6px;
-  color: var(--text-muted); text-decoration: none;
-  font-size: 0.85rem; font-weight: 500;
-}
-.back-home:hover { color: var(--text-main); }
-
 @media (max-width: 480px) {
-  .auth-header, .auth-body, .auth-footer { padding-left: 22px; padding-right: 22px; }
   .lang-select-grid { grid-template-columns: 1fr; }
-  .back-home { left: 16px; top: 14px; }
 }
 
 .username-hint {font-size:0.75rem;color:var(--text-faint);margin-top:4px;display:block;}

@@ -1,5 +1,6 @@
 // frontend/js/home.js
 import { api } from './api.js';
+import { demoLeaderboard } from './demo-data.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   // ── Animated counters ─────────────────────────────────────────
@@ -32,11 +33,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (lbList) {
     try {
       const res = await api.getLeaderboard();
-      const opponents = res.leaderboard || [];
+      let opponents = res.leaderboard || [];
 
       if (opponents.length === 0) {
-        lbList.innerHTML = '<p class="home-empty-state">Chưa có thí sinh nào. Hãy là người đầu tiên!</p>';
-        return;
+        opponents = demoLeaderboard;
+        const notice = document.getElementById('home-demo-notice');
+        if (notice) notice.hidden = false;
       }
 
       const sorted = opponents.slice(0, 5).map((p) => ({ ...p, elo: p.rating }));

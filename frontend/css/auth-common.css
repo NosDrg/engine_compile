@@ -1,0 +1,63 @@
+.auth-header h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.auth-header p {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.auth-footer a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.auth-footer a:hover { text-decoration: underline; }
+
+.input-icon-wrap { position: relative; }
+
+.input-icon-wrap .btn-eye {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  padding: 4px;
+  min-width: 48px;
+  font-size: 0.8rem;
+  transition: color 0.2s;
+}
+
+.back-home {
+  position: absolute;
+  z-index: 2;
+  top: 20px;
+  left: 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.back-home:hover { color: var(--text-main); }
+
+@media (max-width: 480px) {
+  .auth-header,
+  .auth-body,
+  .auth-footer {
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .back-home { left: 16px; top: 14px; }
+}

@@ -6,8 +6,40 @@
       overflow: hidden;
     }
     .hero-glow {
-      position: absolute; inset: 0; pointer-events: none;
-      background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(79,70,229,0.25) 0%, transparent 70%);
+      position: absolute; inset: 0; z-index: 0; pointer-events: none;
+      background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(79,70,229,0.2) 0%, transparent 70%);
+      overflow: hidden;
+    }
+    .hero-glow::before,
+    .hero-glow::after {
+      content: '';
+      position: absolute;
+      width: 42%;
+      height: 75%;
+      border-radius: 50%;
+      filter: blur(72px);
+      opacity: 0.32;
+      will-change: transform;
+    }
+    .hero-glow::before {
+      top: -12%;
+      left: 4%;
+      background: radial-gradient(circle, rgba(56,189,248,0.7), transparent 68%);
+      animation: home-glow-drift 18s ease-in-out infinite alternate;
+    }
+    .hero-glow::after {
+      right: 2%;
+      bottom: -22%;
+      background: radial-gradient(circle, rgba(244,63,94,0.55), transparent 68%);
+      animation: home-glow-drift 22s ease-in-out -8s infinite alternate-reverse;
+    }
+    .hero > :not(.hero-glow) {
+      position: relative;
+      z-index: 1;
+    }
+    @keyframes home-glow-drift {
+      from { transform: translate3d(-8%, -5%, 0) scale(0.9); }
+      to { transform: translate3d(18%, 12%, 0) scale(1.15); }
     }
     .hero-badge {
       display: inline-flex; align-items: center; gap: 8px;

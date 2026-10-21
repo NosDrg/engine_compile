@@ -1,5 +1,6 @@
 // frontend/js/leaderboard.js
 import { api } from './api.js';
+import { demoLeaderboard } from './demo-data.js';
 
 const PAGE_SIZE = 15;
 let allPlayers  = [];
@@ -41,7 +42,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadLeaderboard() {
   try {
     const res = await api.getLeaderboard();
-    allPlayers = (res.leaderboard || []).map((p, i) => ({
+    let players = res.leaderboard || [];
+    const usingDemoData = players.length === 0;
+    if (usingDemoData) {
+      players = demoLeaderboard;
+      const notice = document.getElementById('leaderboard-demo-notice');
+      if (notice) notice.hidden = false;
+    }
+    allPlayers = players.map((p, i) => ({
       username: p.display_name || p.username,
       handle: p.username,
       language: p.language || 'python',
@@ -51,6 +59,7 @@ async function loadLeaderboard() {
       draws: p.draws,
       trend: 'same',
       rank: i + 1,
+      isDemo: usingDemoData,
     }));
 
     renderPodium(allPlayers.slice(0, 3));
@@ -84,12 +93,15 @@ function renderPodium(top3) {
   el.innerHTML = order.map((p, i) => {
     const totalGames = p.wins + p.losses + p.draws;
     const winrate = totalGames > 0 ? ((p.wins / totalGames) * 100).toFixed(0) : 0;
+    const playerName = p.isDemo
+      ? escHtml(p.username)
+      : `<a class="podium-name" href="profile.html?username=${encodeURIComponent(p.handle)}">${escHtml(p.username)}</a>`;
     return `
       <div class="podium-item ${rankClass[i]}">
         <div class="podium-avatar-wrap">
         <img class="podium-avatar" src="assets/default_avatar.jpg" alt="${escHtml(p.username)}">
       </div>
-        <a class="podium-name" href="profile.html?username=${encodeURIComponent(p.handle)}">${escHtml(p.username)}</a>
+        ${playerName}
         <div class="podium-score">${p.elo} ELO</div>
         <div class="podium-lang mt-1">
           <span class="badge ${langBadge[p.language] || 'badge-purple'}">
@@ -124,6 +136,9 @@ function renderTable() {
     const winrate = totalGames > 0 ? ((p.wins / totalGames) * 100).toFixed(0) : 0;
     const rankClass = p.rank === 1 ? 'gold' : p.rank === 2 ? 'silver' : p.rank === 3 ? 'bronze' : '';
     const rankLabel = `<span class="rank-num ${rankClass}">${p.rank}</span>`;
+    const playerName = p.isDemo
+      ? escHtml(p.username)
+      : `<a class="player-name" href="profile.html?username=${encodeURIComponent(p.handle)}">${escHtml(p.username)}</a>`;
 
     return `
       <tr>
@@ -132,7 +147,7 @@ function renderTable() {
           <div class="player-cell">
             <img class="player-avatar" src="assets/default_avatar.jpg" alt="${escHtml(p.username)}">
             <div class="player-info">
-              <a class="player-name" href="profile.html?username=${encodeURIComponent(p.handle)}">${escHtml(p.username)}</a>
+              ${playerName}
               <div class="player-sub">${totalGames} trận</div>
             </div>
           </div>

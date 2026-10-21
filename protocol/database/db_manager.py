@@ -22,7 +22,7 @@ class DatabaseManager:
         return conn
 
     def _init_db(self):
-        """Khởi tạo toàn bộ cấu trúc bảng nếu database mới được tạo."""
+        """Khởi tạo toàn bộ cấu trúc bảng và tự động migrate các cột còn thiếu."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
@@ -40,6 +40,22 @@ class DatabaseManager:
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+
+            # TỰ ĐỘNG MIGRATION: Bổ sung các cột nếu bảng users cũ bị thiếu
+            cursor.execute("PRAGMA table_info(users)")
+            existing_columns = {row["name"] for row in cursor.fetchall()}
+            
+            missing_columns = {
+                "password_hash": "TEXT",
+                "display_name": "TEXT",
+                "role": "TEXT DEFAULT 'player'",
+                "avatar_id": "TEXT DEFAULT 'robot'",
+                "bio": "TEXT DEFAULT ''",
+                "rating": "INTEGER DEFAULT 1000"
+            }
+            for col_name, col_def in missing_columns.items():
+                if col_name not in existing_columns:
+                    cursor.execute(f"ALTER TABLE users ADD COLUMN {col_name} {col_def}")
 
             # 2. Bảng mã nguồn bot (submissions)
             cursor.execute("""
@@ -86,7 +102,7 @@ class DatabaseManager:
                 )
             """)
 
-            # 5. Bảng điểm thưởng và nhiệm vụ (user_points & mission_history)
+            # 5. Bảng điểm thưởng và nhiệm vụ
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS user_points (
                     user_id INTEGER PRIMARY KEY,
@@ -106,7 +122,7 @@ class DatabaseManager:
                 )
             """)
 
-            # 6. Bảng diễn đàn (forum_messages & forum_deletions)
+            # 6. Bảng diễn đàn
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS forum_messages (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -124,15 +140,17 @@ class DatabaseManager:
                 )
             """)
 
-            # Tạo sẵn tài khoản admin mặc định nếu chưa có
-            admin_row = cursor.execute("SELECT id FROM users WHERE username = 'admin'").fetchone()
+            # Tạo tài khoản admin mặc định nếu chưa có
+            admin_user = os.getenv("ADMIN_USERNAME", "admin")
+            admin_pass = os.getenv("ADMIN_PASSWORD", "admin123")
+            admin_hash = hashlib.sha256(admin_pass.encode()).hexdigest()
+
+            admin_row = cursor.execute("SELECT id FROM users WHERE username = ?", (admin_user,)).fetchone()
             if not admin_row:
-                # password mặc định: admin123 (sha256)
-                default_hash = hashlib.sha256("admin123".encode()).hexdigest()
                 cursor.execute("""
                     INSERT INTO users (username, password_hash, display_name, role)
-                    VALUES ('admin', ?, 'Administrator', 'admin')
-                """, (default_hash,))
+                    VALUES (?, ?, 'Administrator', 'admin')
+                """, (admin_user, admin_hash))
 
             conn.commit()
 

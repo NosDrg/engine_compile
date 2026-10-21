@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&display=swap');
+
 /* frontend/css/main.css
 /* ─── CSS Variables ─────────────────────────────────── */
 :root {
@@ -37,7 +39,7 @@
 html { scroll-behavior: smooth; }
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Open Sans", Arial, Helvetica, sans-serif;
   font-size: 18px;
   background: var(--bg-main);
   color: var(--text-main);
@@ -55,6 +57,27 @@ body::before {
     radial-gradient(ellipse 40% 30% at 10% 60%, rgba(56,189,248,0.08) 0%, transparent 60%);
   pointer-events: none;
   z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: -120px;
+  background-image:
+    radial-gradient(1.5px 1.5px at 24px 36px, rgba(255,255,255,0.48) 50%, transparent 100%),
+    radial-gradient(1px 1px at 106px 118px, rgba(129,140,248,0.65) 50%, transparent 100%),
+    radial-gradient(2px 2px at 188px 72px, rgba(56,189,248,0.42) 50%, transparent 100%),
+    radial-gradient(1px 1px at 246px 206px, rgba(255,255,255,0.38) 50%, transparent 100%);
+  background-size: 280px 260px;
+  opacity: 0.42;
+  pointer-events: none;
+  z-index: 0;
+  animation: particle-drift 36s linear infinite;
+}
+
+@keyframes particle-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-140px, 130px, 0); }
 }
 
 /* ─── Scrollbar ─────────────────────────────────────── */
@@ -100,8 +123,10 @@ body::before {
 .navbar-nav a {
   text-decoration: none;
   color: var(--text-muted);
-  font-size: calc(1em + 2px);
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
   padding: 6px 12px;
   border-radius: var(--radius-sm);
   transition: var(--transition);
@@ -119,11 +144,118 @@ body::before {
 .navbar-actions {
   margin-left: auto;
   display: flex; align-items: center; gap: 10px;
+  position: relative;
+  overflow: visible;
 }
 
 .navbar-actions .btn,
 .navbar-actions .nav-user {
   font-size: calc(1em + 2px);
+}
+
+.nav-user-dropdown {
+  position: relative;
+  display: inline-block;
+}
+.nav-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(260px, 28vw);
+  padding: 7px 14px;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.nav-user strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nav-user:hover,
+.nav-user[aria-expanded="true"] {
+  background: rgba(255,255,255,0.16);
+  border-color: #3b82f6;
+}
+.nav-user::before { content: none !important; display: none !important; }
+.nav-user-caret {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  font-size: 0.75rem;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 0.2s ease;
+}
+.nav-user[aria-expanded="true"] .nav-user-caret {
+  transform: translateY(2px) rotate(225deg);
+}
+.nav-user-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1000;
+  min-width: 200px;
+  padding: 6px 0;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  background: #151921;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.16s ease both;
+}
+.nav-user-menu[hidden] { display: none !important; }
+.nav-user-menu-link {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: #cbd5e1;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.nav-user-menu-link:hover,
+.nav-user-menu-link:focus-visible {
+  outline: none;
+  background: rgba(59,130,246,0.15);
+  color: #fff;
+}
+.nav-notification-count {
+  min-width: 20px;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+}
+.nav-notification-count[hidden] { display: none; }
+.nav-user-menu-divider {
+  height: 1px;
+  margin: 6px 0;
+  background: rgba(255,255,255,0.08);
+}
+.nav-user-logout { color: #f87171; }
+.nav-user-logout:hover {
+  background: rgba(239,68,68,0.15);
+  color: #fca5a5;
 }
 
 /* ─── Buttons ────────────────────────────────────────── */
@@ -413,6 +545,19 @@ tr:last-child td { border-bottom: none; }
 .toast.toast-error   { border-color: rgba(248,113,113,0.4); }
 .toast .toast-title  { font-weight: 600; margin-bottom: 2px; }
 .toast .toast-msg    { color: var(--text-muted); font-size: 0.8rem; }
+.demo-data-notice {
+  display: table;
+  margin: 0 auto 24px;
+  padding: 6px 12px;
+  border: 1px solid rgba(251,191,36,0.28);
+  border-radius: 999px;
+  background: rgba(251,191,36,0.08);
+  color: #fbbf24;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.demo-data-notice[hidden] { display: none; }
 @keyframes slideIn {
   from { transform: translateX(30px); opacity: 0; }
   to   { transform: translateX(0);    opacity: 1; }
@@ -450,6 +595,15 @@ tr:last-child td { border-bottom: none; }
   to   { box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(79,70,229,0.2); }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* ─── Footer ─────────────────────────────────────────── */
 .footer {
   text-align: center;
@@ -474,12 +628,11 @@ tr:last-child td { border-bottom: none; }
   .navbar-brand { font-size: 1.1rem; }
   .navbar-actions {
     max-width: 38vw;
-    overflow-x: auto;
+    overflow: visible;
     gap: 8px;
-    scrollbar-width: thin;
   }
-  .navbar-actions .btn,
-  .navbar-actions .nav-user { font-size: 20px; }
+  .navbar-actions .btn { font-size: 0.9rem; }
+  .navbar-actions .nav-user { font-size: 0.9rem; }
 }
 
 @media (max-width: 480px) {
@@ -488,6 +641,255 @@ tr:last-child td { border-bottom: none; }
   .navbar-brand { font-size: 1rem; }
   .navbar-nav { max-width: 24vw; }
   .navbar-nav a { font-size: 20px; padding: 6px; }
-  .navbar-actions { max-width: 38vw; }
+  .navbar-actions { max-width: 50vw; }
+  .nav-user { max-width: 32vw; padding: 7px 8px; }
+  .nav-user-menu { right: -4px; }
   .navbar-actions .btn { padding: 6px 9px; }
+}
+
+/* 1. IN ĐẬM CÁC TAB: Trang chủ, Thi đấu, Leaderboard, Hướng dẫn */
+.navbar-nav li a {
+  font-weight: 800 !important;
+  font-size: 1rem !important;
+  letter-spacing: 0.3px;
+}
+
+/* 2. NÚT TÊN NGƯỜI DÙNG (Không chứa icon tím) */
+.nav-user-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.nav-user-btn:hover,
+.nav-user-btn[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: #38bdf8;
+}
+
+.nav-caret {
+  font-size: 0.75rem;
+  transition: transform 0.2s ease;
+}
+
+.nav-user-btn[aria-expanded="true"] .nav-caret {
+  transform: rotate(180deg);
+}
+
+/* Xóa triệt để icon nếu còn dính từ class cũ */
+.nav-user-btn::before,
+.nav-user-btn img,
+.user-name-text::before {
+  content: none !important;
+  display: none !important;
+}
+
+/* 3. THANH TASKBAR MENU DỌC (Dropdown xếp dọc các mục) */
+.nav-user-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.nav-taskbar-vertical {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 220px;
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  padding: 6px 0;
+  display: flex;
+  flex-direction: column; /* XẾP DỌC CÁC MỤC */
+  z-index: 1000;
+  animation: fadeIn 0.15s ease both;
+}
+
+.nav-taskbar-vertical[hidden] {
+  display: none !important;
+}
+
+/* Từng mục bên trong taskbar dọc */
+.taskbar-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 18px;
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.taskbar-item:hover {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
+.taskbar-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 6px 0;
+}
+
+.taskbar-logout {
+  color: #f87171;
+}
+
+.taskbar-logout:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+}
+
+.taskbar-badge {
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 99px;
+}
+
+/* ─── 1. BOLD TẤT CẢ 4 LINK ĐIỀU HƯỚNG CHÍNH ─── */
+.navbar-nav li a {
+  font-weight: 800 !important;
+  font-size: 1rem !important;
+  letter-spacing: 0.3px;
+}
+
+/* ─── 2. NÚT TÊN NGƯỜI DÙNG (TRIỆT TIÊU HOÀN TOÀN ICON TÍM) ─── */
+.nav-user-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.nav-user-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  padding: 7px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.nav-user-btn:hover,
+.nav-user-btn[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: #38bdf8;
+}
+
+/* Xóa triệt để mọi icon hình người giả lập */
+.nav-user-btn::before,
+.nav-user-btn::after,
+.user-name-text::before,
+.nav-user-btn img,
+.nav-user-btn svg {
+  content: none !important;
+  display: none !important;
+}
+
+.nav-caret {
+  font-size: 0.75rem;
+  transition: transform 0.2s ease;
+}
+
+.nav-user-btn[aria-expanded="true"] .nav-caret {
+  transform: rotate(180deg);
+}
+
+/* ─── 3. THANH TASKBAR MENU DỌC (POPUP KHI CLICK) ─── */
+.nav-taskbar-vertical {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 220px;
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(14px);
+  padding: 6px 0;
+  display: flex !important;
+  flex-direction: column !important; /* Buộc xếp theo cột dọc */
+  z-index: 1000;
+  animation: fadeIn 0.15s ease both;
+}
+
+.nav-taskbar-vertical[hidden] {
+  display: none !important;
+}
+
+/* Các mục bên trong thanh taskbar dọc */
+.taskbar-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 18px;
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.taskbar-item:hover {
+  background: rgba(56, 189, 248, 0.16);
+  color: #38bdf8;
+}
+
+.taskbar-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 6px 0;
+}
+
+.taskbar-logout {
+  color: #f87171;
+}
+
+.taskbar-logout:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+}
+
+.taskbar-badge {
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 99px;
+}
+.taskbar-badge[hidden] {
+  display: none !important;
 }
