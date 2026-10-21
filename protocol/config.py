@@ -1,10 +1,6 @@
 import os
 from pathlib import Path
 
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-
-PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
-
 # Thư mục protocol/
 PROTOCOL_DIR = Path(__file__).resolve().parent
 
