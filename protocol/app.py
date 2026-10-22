@@ -68,7 +68,7 @@ def serve_admin_panel(request: Request, file_path: str = ""):
     target_path = os.path.join(FRONTEND_DIR, "admin", file_path or "index.html")
     if os.path.exists(target_path) and os.path.isfile(target_path):
         return FileResponse(target_path)
-    return HTTPException(status_code=404, detail="File not found")
+    raise HTTPException(status_code=404, detail="File not found")
 
 if os.path.isdir(FRONTEND_DIR):
     app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")

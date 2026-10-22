@@ -3,7 +3,7 @@ import os
 import sqlite3
 import hashlib
 import json
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Tuple
 
 class DatabaseManager:
     def __init__(self, db_path: str = "save/match_arena.db"):

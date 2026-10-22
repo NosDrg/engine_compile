@@ -40,14 +40,15 @@ def set_sandbox_limits(max_memory_mb: int = DEFAULT_MAX_MEMORY_MB):
     # 2. Giới hạn tạo tiến trình con (Fork bomb)
     if rlimit_nproc is not None:
         try:
-            setrlimit(rlimit_nproc, (1, 1))
+            setrlimit(rlimit_nproc, (64, 64))
         except (ValueError, res_error):
             pass
 
-    # 3. Chặn ghi file ra đĩa
+    # 3. Chặn ghi file rác dung lượng lớn (Cho phép tối đa 10MB để g++ / python tạo file tạm)
     if rlimit_fsize is not None:
         try:
-            setrlimit(rlimit_fsize, (0, 0))
+            max_file_bytes = 10 * 1024 * 1024  # 10MB
+            setrlimit(rlimit_fsize, (max_file_bytes, max_file_bytes))
         except (ValueError, res_error):
             pass
 
