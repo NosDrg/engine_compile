@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles # type: ignore
 
 from config import FRONTEND_DIR
 from routers.auth import JWT_SECRET, JWT_ALGORITHM
-from routers import submissions, matches, auth, stats, notifications, admin, forum, teams, missions
+from routers import submissions, matches, auth, stats, notifications, admin, forum, teams, missions, contests, users
 
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -37,6 +37,8 @@ app.add_middleware(
 
 # Đăng ký các router API
 app.include_router(auth.router)
+app.include_router(users.router)
+app.include_router(contests.router)
 app.include_router(submissions.router)
 app.include_router(matches.router)
 app.include_router(stats.router)

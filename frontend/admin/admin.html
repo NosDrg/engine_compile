@@ -16,8 +16,67 @@
 <section class="admin-card"><h2>Tài khoản</h2><div class="table-scroll"><table><thead><tr><th>Người chơi</th><th>Vai trò</th><th>Rating</th><th>Thành tích</th><th>Thao tác</th></tr></thead><tbody id="admin-users"></tbody></table></div></section>
 <section class="admin-card"><h2>Phiên bản bot đã nộp</h2><div class="table-scroll"><table><thead><tr><th>Chủ tài khoản</th><th>Phiên bản</th><th>Ngôn ngữ</th><th>Trạng thái</th><th>Ngày nộp</th><th></th></tr></thead><tbody id="admin-submissions"></tbody></table></div></section>
 <section class="admin-card"><h2>Kiểm duyệt diễn đàn</h2><div id="admin-forum"></div></section>
-<section class="admin-card"><h2>Tạo giải đấu</h2><form id="tournament-form"><div class="form-group"><label for="tour-name">Tên giải</label><input class="form-control" id="tour-name" maxlength="100" required></div><div class="form-group"><label for="tour-description">Mô tả</label><textarea class="form-control" id="tour-description" maxlength="2000"></textarea></div><div class="form-group"><label for="tour-format">Thể thức</label><select class="form-control" id="tour-format"><option value="single_elimination">Loại trực tiếp</option><option value="round_robin">Vòng tròn</option></select></div><div class="form-group"><label for="tour-map">Bản đồ</label><select class="form-control" id="tour-map"><option value="classic">Classic</option><option value="frontline">Frontline</option><option value="deep">Deep</option></select></div><div class="form-group"><label for="tour-start">Lịch bắt đầu (tuỳ chọn)</label><input class="form-control" id="tour-start" type="datetime-local"></div><button class="btn btn-primary" type="submit">Tạo giải</button></form></section>
-<section class="admin-card"><h2>Giải đấu</h2><div id="admin-tournaments"></div></section>
+<section class="admin-card">
+  <h2>Tạo Cuộc Thi Mới (ICPC Contest Arena)</h2>
+  <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
+    Thiết lập kỳ thi thuật toán bot: giới hạn thời gian đếm ngược, phân bổ tài nguyên và bộ test case nhân tạo để tự động thi đấu vòng tròn (Round-Robin).
+  </p>
+
+  <form id="contest-create-form">
+    <div class="form-row" style="display: flex; gap: 14px; margin-bottom: 12px;">
+      <div class="form-group" style="flex: 1.5;">
+        <label for="contest-title">Tên cuộc thi</label>
+        <input class="form-control" id="contest-title" placeholder="VD: Giải Đấu Thuật Toán Bot Mùa Đông 2026" required>
+      </div>
+      <div class="form-group" style="flex: 1;">
+        <label for="contest-id">Mã kỳ thi (ID - Tùy chọn)</label>
+        <input class="form-control" id="contest-id" placeholder="VD: icpc_winter_2026 (để trống tự sinh)">
+      </div>
+      <div class="form-group" style="flex: 1;">
+        <label for="contest-game">Bộ môn / Trò chơi</label>
+        <select class="form-control" id="contest-game" required>
+          <option value="default">Đang tải danh sách game...</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row" style="display: flex; gap: 14px; margin-bottom: 12px;">
+      <div class="form-group" style="flex: 1;">
+        <label for="contest-start">Thời điểm bắt đầu</label>
+        <input class="form-control" id="contest-start" type="datetime-local">
+      </div>
+      <div class="form-group" style="flex: 0.8;">
+        <label for="contest-duration">Thời lượng (Phút)</label>
+        <input class="form-control" id="contest-duration" type="number" value="60" min="5" required>
+      </div>
+      <div class="form-group" style="flex: 0.8;">
+        <label for="contest-ram">Giới hạn RAM (MB)</label>
+        <input class="form-control" id="contest-ram" type="number" value="128" min="32" max="1024" required>
+      </div>
+      <div class="form-group" style="flex: 0.8;">
+        <label for="contest-timeout">Timeout mỗi lượt (s)</label>
+        <input class="form-control" id="contest-timeout" type="number" step="0.1" value="2.0" min="0.2" required>
+      </div>
+      <div class="form-group" style="flex: 0.8;">
+        <label for="contest-rounds">Ván mỗi cặp đấu</label>
+        <input class="form-control" id="contest-rounds" type="number" value="3" min="1" max="11" required>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom: 14px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <label for="contest-testcases" style="margin-bottom: 0;">Bộ Test Case Nhân Tạo (Định dạng JSON)</label>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-load-sample-tc">Nạp 4 test mẫu chuẩn</button>
+      </div>
+      <textarea class="form-control" id="contest-testcases" rows="7" style="font-family: monospace; font-size: 13px; background: #030712; color: #7dd3fc;" placeholder='[&#10;  {&#10;    "name": "Test 01: Nước đi góc",&#10;    "initial_board_state": "{\"board\": [[null, null], [null, null]], \"turn\": 0}",&#10;    "expected_constraint": "{\"type\": \"empty_cell\"}",&#10;    "timeout_ms": 1000&#10;  }&#10;]'></textarea>
+    </div>
+
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <button class="btn btn-primary" type="submit" id="btn-submit-contest">Khởi Tạo Cuộc Thi</button>
+      <span id="contest-create-status" style="font-size: 14px; font-weight: 600;"></span>
+    </div>
+  </form>
+</section><section class="admin-card"><h2>Giải đấu</h2><div id="admin-tournaments"></div></section>
 </main>
 <script type="module" src="../js/admin.js"></script>
 </body></html>

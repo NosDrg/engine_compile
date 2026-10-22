@@ -281,6 +281,127 @@ if __name__ == "__main__":
             admin_pass = os.getenv("ADMIN_PASSWORD", "admin123")
             admin_hash = hashlib.sha256(admin_pass.encode()).hexdigest()
 
+            
+            # 9. Bảng quản lý kỳ thi đấu (contests)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS contests (
+                    id TEXT PRIMARY KEY,
+                    title TEXT NOT NULL,
+                    game_slug TEXT NOT NULL,
+                    start_time TIMESTAMP NOT NULL,
+                    duration_minutes INTEGER NOT NULL,
+                    max_memory_mb INTEGER DEFAULT 128,
+                    run_timeout_sec REAL DEFAULT 2.0,
+                    rounds_per_pair INTEGER DEFAULT 3,
+                    status TEXT DEFAULT 'UPCOMING',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(game_slug) REFERENCES games(slug)
+                )
+            """)
+
+            # 10. Bộ test case nhân tạo cho từng contest
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS contest_test_cases (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    contest_id TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    initial_board_state TEXT NOT NULL,
+                    expected_constraint TEXT,
+                    timeout_ms INTEGER DEFAULT 1000,
+                    FOREIGN KEY(contest_id) REFERENCES contests(id)
+                )
+            """)
+
+            # 11. Bản lưu nháp & lịch sử kiểm thử của thí sinh
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS contest_drafts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    contest_id TEXT NOT NULL,
+                    user_id INTEGER NOT NULL,
+                    language TEXT NOT NULL,
+                    source_code TEXT NOT NULL,
+                    passed_test_count INTEGER DEFAULT 0,
+                    total_test_count INTEGER DEFAULT 0,
+                    avg_response_time_ms REAL DEFAULT 0.0,
+                    is_submitted INTEGER DEFAULT 0,
+                    blur_count INTEGER DEFAULT 0,
+                    total_blur_sec INTEGER DEFAULT 0,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(contest_id) REFERENCES contests(id),
+                    FOREIGN KEY(user_id) REFERENCES users(id)
+                )
+            """)
+
+            # 12. Bảng xếp hạng và kết quả vòng đấu chéo giữa các bot
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS contest_leaderboard (
+                    contest_id TEXT NOT NULL,
+                    user_id INTEGER NOT NULL,
+                    submission_id TEXT,
+                    wins INTEGER DEFAULT 0,
+                    draws INTEGER DEFAULT 0,
+                    losses INTEGER DEFAULT 0,
+                    points INTEGER DEFAULT 0,
+                    avg_speed_ms REAL DEFAULT 0.0,
+                    rank INTEGER DEFAULT 0,
+                    PRIMARY KEY (contest_id, user_id)
+                )
+            """)
+
+            # Khởi tạo Contest mặc định nếu chưa có
+            contest_count = cursor.execute('SELECT COUNT(*) FROM contests').fetchone()[0]
+            if contest_count == 0:
+                import datetime
+                now_str = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+                cursor.execute("""
+                    INSERT INTO contests (id, title, game_slug, start_time, duration_minutes, max_memory_mb, run_timeout_sec, rounds_per_pair, status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    'icpc_round_1_2026',
+                    'Giải Đấu Thuật Toán Bot ICPC Mùa Xuân 2026',
+                    'default',
+                    now_str,
+                    120,
+                    128,
+                    2.0,
+                    3,
+                    'RUNNING'
+                ))
+
+                empty_board = [[None for _ in range(9)] for _ in range(9)]
+                tc1_state = json.dumps({'board': empty_board, 'turn': 0, 'max_turns': 81})
+                tc1_constraint = json.dumps({'type': 'empty_cell'})
+
+                board2 = [[None for _ in range(9)] for _ in range(9)]
+                board2[4][4] = 0
+                board2[4][5] = 1
+                tc2_state = json.dumps({'board': board2, 'turn': 2, 'max_turns': 81})
+                tc2_constraint = json.dumps({'type': 'empty_cell'})
+
+                board3 = [[None for _ in range(9)] for _ in range(9)]
+                board3[3][3] = 1
+                board3[3][4] = 1
+                board3[3][5] = 1
+                tc3_state = json.dumps({'board': board3, 'turn': 5, 'max_turns': 81})
+                tc3_constraint = json.dumps({'type': 'empty_cell'})
+
+                board4 = [[None for _ in range(9)] for _ in range(9)]
+                for r in range(3):
+                    for c in range(3):
+                        board4[r][c] = (r + c) % 2
+                tc4_state = json.dumps({'board': board4, 'turn': 9, 'max_turns': 81})
+                tc4_constraint = json.dumps({'type': 'empty_cell'})
+
+                cursor.executemany("""
+                    INSERT INTO contest_test_cases (contest_id, name, initial_board_state, expected_constraint, timeout_ms)
+                    VALUES (?, ?, ?, ?, ?)
+                """, [
+                    ('icpc_round_1_2026', 'Test 01: Nước đi mở đầu bàn cờ trống', tc1_state, tc1_constraint, 1000),
+                    ('icpc_round_1_2026', 'Test 02: Tránh ô đã có quân đối thủ', tc2_state, tc2_constraint, 1000),
+                    ('icpc_round_1_2026', 'Test 03: Phản xạ phòng thủ bàn cờ đông quân', tc3_state, tc3_constraint, 1000),
+                    ('icpc_round_1_2026', 'Test 04: Đánh giá tốc độ phản hồi tối ưu', tc4_state, tc4_constraint, 800),
+                ])
+
             admin_row = cursor.execute("SELECT id FROM users WHERE username = ?", (admin_user,)).fetchone()
             if not admin_row:
                 cursor.execute("""
@@ -562,3 +683,473 @@ if __name__ == "__main__":
                 'is_enabled': 1 if data.get('is_enabled', 1) in (1, True, '1', 'true') else 0
             })
             conn.commit()
+
+
+    # --- ICPC CONTEST MANAGEMENT ---
+    def create_contest(self, contest_data: Dict[str, Any]) -> str:
+        """Tạo kỳ thi mới."""
+        import uuid
+        contest_id = contest_data.get("id") or f"contest_{uuid.uuid4().hex[:8]}"
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO contests (id, title, game_slug, start_time, duration_minutes, max_memory_mb, run_timeout_sec, rounds_per_pair, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                contest_id,
+                contest_data.get("title", "Giải đấu ICPC Bot"),
+                contest_data.get("game_slug", "default"),
+                contest_data.get("start_time"),
+                int(contest_data.get("duration_minutes", 60)),
+                int(contest_data.get("max_memory_mb", 128)),
+                float(contest_data.get("run_timeout_sec", 2.0)),
+                int(contest_data.get("rounds_per_pair", 3)),
+                contest_data.get("status", "RUNNING")
+            ))
+            
+            # Lưu test cases nếu có
+            test_cases = contest_data.get("test_cases", [])
+            for tc in test_cases:
+                cursor.execute("""
+                    INSERT INTO contest_test_cases (contest_id, name, initial_board_state, expected_constraint, timeout_ms)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (
+                    contest_id,
+                    tc.get("name", "Test case"),
+                    tc.get("initial_board_state", "{}"),
+                    tc.get("expected_constraint", ""),
+                    int(tc.get("timeout_ms", 1000))
+                ))
+            conn.commit()
+            return contest_id
+
+    def _parse_time(self, ts_str: Any):
+        import datetime
+        if not ts_str:
+            return datetime.datetime.now(datetime.timezone.utc)
+        s = str(ts_str).strip()
+        if s.endswith("Z"):
+            s = s[:-1] + "+00:00"
+        for fmt in ("%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%d %H:%M:%S%z", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S"):
+            try:
+                dt = datetime.datetime.strptime(s, fmt)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=datetime.timezone.utc)
+                return dt
+            except ValueError:
+                pass
+        try:
+            dt = datetime.datetime.fromisoformat(s)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=datetime.timezone.utc)
+            return dt
+        except Exception:
+            return datetime.datetime.now(datetime.timezone.utc)
+
+    def get_contest(self, contest_id: str) -> Optional[Dict[str, Any]]:
+        """Lấy thông tin chi tiết cuộc thi kèm thời gian còn lại."""
+        import datetime
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            row = cursor.execute("SELECT * FROM contests WHERE id = ?", (contest_id,)).fetchone()
+            if not row:
+                return None
+            data = dict(row)
+            start_dt = self._parse_time(data["start_time"])
+            now_dt = datetime.datetime.now(datetime.timezone.utc)
+            duration_min = data.get("duration_minutes", 60)
+            end_dt = start_dt + datetime.timedelta(minutes=duration_min)
+
+            if now_dt < start_dt:
+                status = data.get("status") or "UPCOMING"
+                remaining_sec = max(0, int((end_dt - now_dt).total_seconds()))
+            elif now_dt > end_dt:
+                status = "FINISHED" if data.get("status") == "FINISHED" else "EVALUATING"
+                remaining_sec = 0
+            else:
+                status = "RUNNING" if data.get("status") != "FINISHED" else "FINISHED"
+                remaining_sec = max(0, int((end_dt - now_dt).total_seconds()))
+
+            data["status"] = status
+            data["remaining_seconds"] = remaining_sec
+            return data
+
+    def get_active_contest(self) -> Optional[Dict[str, Any]]:
+        """Lấy contest đang hoạt động (hoặc mới nhất)."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            row = cursor.execute("SELECT id FROM contests WHERE status IN ('RUNNING', 'UPCOMING') ORDER BY created_at DESC LIMIT 1").fetchone()
+            if not row:
+                row = cursor.execute("SELECT id FROM contests ORDER BY created_at DESC LIMIT 1").fetchone()
+            if not row:
+                return None
+            return self.get_contest(row["id"])
+
+    def get_contest_test_cases(self, contest_id: str, public_only: bool = False) -> List[Dict[str, Any]]:
+        """Lấy danh sách test cases của một contest."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            rows = cursor.execute("SELECT * FROM contest_test_cases WHERE contest_id = ? ORDER BY id ASC", (contest_id,)).fetchall()
+            result = []
+            for r in rows:
+                item = dict(r)
+                if public_only:
+                    item.pop("initial_board_state", None)
+                    item.pop("expected_constraint", None)
+                result.append(item)
+            return result
+
+    def add_contest_test_case(self, contest_id: str, name: str, initial_board_state: str, expected_constraint: str = "", timeout_ms: int = 1000) -> int:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO contest_test_cases (contest_id, name, initial_board_state, expected_constraint, timeout_ms)
+                VALUES (?, ?, ?, ?, ?)
+            """, (contest_id, name, initial_board_state, expected_constraint, timeout_ms))
+            conn.commit()
+            return cursor.lastrowid # type: ignore
+
+    def save_contest_draft(
+        self,
+        contest_id: str,
+        user_id: int,
+        lang: str,
+        code: str,
+        passed: int = 0,
+        total: int = 0,
+        avg_speed: float = 0.0,
+        blur_count: int = 0,
+        blur_sec: int = 0
+    ) -> int:
+        """Cập nhật bản nháp và chỉ số kiểm thử mới nhất của thí sinh."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            existing = cursor.execute(
+                "SELECT id FROM contest_drafts WHERE contest_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1",
+                (contest_id, user_id)
+            ).fetchone()
+
+            if existing:
+                draft_id = existing["id"]
+                cursor.execute("""
+                    UPDATE contest_drafts
+                    SET language = ?, source_code = ?, passed_test_count = ?, total_test_count = ?,
+                        avg_response_time_ms = ?, blur_count = ?, total_blur_sec = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                """, (lang, code, passed, total, avg_speed, blur_count, blur_sec, draft_id))
+            else:
+                cursor.execute("""
+                    INSERT INTO contest_drafts (
+                        contest_id, user_id, language, source_code, passed_test_count,
+                        total_test_count, avg_response_time_ms, is_submitted, blur_count, total_blur_sec, updated_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, CURRENT_TIMESTAMP)
+                """, (contest_id, user_id, lang, code, passed, total, avg_speed, blur_count, blur_sec))
+                draft_id = cursor.lastrowid # type: ignore
+
+            conn.commit()
+            return draft_id
+
+    def get_user_contest_draft(self, contest_id: str, user_id: int) -> Optional[Dict[str, Any]]:
+        """Lấy code draft mới nhất khi thí sinh reload trang."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            row = cursor.execute(
+                "SELECT * FROM contest_drafts WHERE contest_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1",
+                (contest_id, user_id)
+            ).fetchone()
+            return dict(row) if row else None
+
+    def set_user_contest_submission(self, contest_id: str, user_id: int, source_code: Optional[str] = None, language: Optional[str] = None) -> Dict[str, Any]:
+        """Thí sinh chủ động nộp bài chính thức trước khi hết giờ."""
+        import uuid
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            draft = cursor.execute(
+                "SELECT * FROM contest_drafts WHERE contest_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1",
+                (contest_id, user_id)
+            ).fetchone()
+
+            code = source_code or (draft["source_code"] if draft else "")
+            lang = language or (draft["language"] if draft else "python")
+            avg_speed = draft["avg_response_time_ms"] if draft else 0.0
+
+            sub_id = f"contest_sub_{uuid.uuid4().hex[:8]}"
+            cursor.execute("""
+                INSERT INTO submissions (id, user_id, language, source_code, status)
+                VALUES (?, ?, ?, ?, 'VALID')
+            """, (sub_id, user_id, lang, code))
+
+            if draft:
+                cursor.execute("UPDATE contest_drafts SET is_submitted = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (draft["id"],))
+            else:
+                cursor.execute("""
+                    INSERT INTO contest_drafts (contest_id, user_id, language, source_code, is_submitted)
+                    VALUES (?, ?, ?, ?, 1)
+                """, (contest_id, user_id, lang, code))
+
+            # Khởi tạo vị trí trên bảng xếp hạng nếu chưa có
+            cursor.execute("""
+                INSERT INTO contest_leaderboard (contest_id, user_id, submission_id, wins, draws, losses, points, avg_speed_ms, rank)
+                VALUES (?, ?, ?, 0, 0, 0, 0, ?, 0)
+                ON CONFLICT(contest_id, user_id) DO UPDATE SET
+                    submission_id = excluded.submission_id,
+                    avg_speed_ms = excluded.avg_speed_ms
+            """, (contest_id, user_id, sub_id, avg_speed))
+
+            conn.commit()
+            return {"success": True, "submission_id": sub_id, "message": "Nộp bài chính thức thành công."}
+
+    def finalize_contest_submissions(self, contest_id: str) -> List[Dict[str, Any]]:
+        """Dành cho Server: khi contest chuyển trạng thái sang EVALUATING, tự động chọn bản draft tốt nhất của mỗi thí sinh."""
+        import uuid
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE contests SET status = 'EVALUATING' WHERE id = ?", (contest_id,))
+            
+            user_rows = cursor.execute(
+                "SELECT DISTINCT user_id FROM contest_drafts WHERE contest_id = ?",
+                (contest_id,)
+            ).fetchall()
+
+            finalized_list = []
+            for u in user_rows:
+                uid = u["user_id"]
+                best_draft = cursor.execute("""
+                    SELECT * FROM contest_drafts
+                    WHERE contest_id = ? AND user_id = ?
+                    ORDER BY passed_test_count DESC, updated_at DESC LIMIT 1
+                """, (contest_id, uid)).fetchone()
+
+                if not best_draft:
+                    continue
+
+                draft_id = best_draft["id"]
+                cursor.execute("UPDATE contest_drafts SET is_submitted = 1 WHERE id = ?", (draft_id,))
+
+                sub_id = f"contest_final_{uuid.uuid4().hex[:8]}"
+                cursor.execute("""
+                    INSERT INTO submissions (id, user_id, language, source_code, status)
+                    VALUES (?, ?, ?, ?, 'VALID')
+                """, (sub_id, uid, best_draft["language"], best_draft["source_code"]))
+
+                cursor.execute("""
+                    INSERT INTO contest_leaderboard (contest_id, user_id, submission_id, wins, draws, losses, points, avg_speed_ms, rank)
+                    VALUES (?, ?, ?, 0, 0, 0, 0, ?, 0)
+                    ON CONFLICT(contest_id, user_id) DO UPDATE SET
+                        submission_id = excluded.submission_id,
+                        avg_speed_ms = excluded.avg_speed_ms
+                """, (contest_id, uid, sub_id, best_draft["avg_response_time_ms"]))
+
+                user_info = cursor.execute("SELECT username, display_name FROM users WHERE id = ?", (uid,)).fetchone()
+                finalized_list.append({
+                    "contest_id": contest_id,
+                    "user_id": uid,
+                    "username": user_info["username"] if user_info else f"User_{uid}",
+                    "display_name": (user_info["display_name"] if user_info else None) or f"User_{uid}",
+                    "submission_id": sub_id,
+                    "language": best_draft["language"],
+                    "source_code": best_draft["source_code"],
+                    "passed_test_count": best_draft["passed_test_count"],
+                    "avg_speed_ms": best_draft["avg_response_time_ms"]
+                })
+
+            conn.commit()
+            return finalized_list
+
+    def save_contest_match_result(self, contest_id: str, u0: int, u1: int, winner_slot: Optional[int], match_id: str) -> None:
+        """Cập nhật điểm cho 2 user vào bảng contest_leaderboard."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            for uid in (u0, u1):
+                cursor.execute("""
+                    INSERT OR IGNORE INTO contest_leaderboard (contest_id, user_id, wins, draws, losses, points, avg_speed_ms, rank)
+                    VALUES (?, ?, 0, 0, 0, 0, 0.0, 0)
+                """, (contest_id, uid))
+
+            if winner_slot == 0:
+                cursor.execute("UPDATE contest_leaderboard SET wins = wins + 1, points = points + 3 WHERE contest_id = ? AND user_id = ?", (contest_id, u0))
+                cursor.execute("UPDATE contest_leaderboard SET losses = losses + 1 WHERE contest_id = ? AND user_id = ?", (contest_id, u1))
+            elif winner_slot == 1:
+                cursor.execute("UPDATE contest_leaderboard SET losses = losses + 1 WHERE contest_id = ? AND user_id = ?", (contest_id, u0))
+                cursor.execute("UPDATE contest_leaderboard SET wins = wins + 1, points = points + 3 WHERE contest_id = ? AND user_id = ?", (contest_id, u1))
+            else:
+                cursor.execute("UPDATE contest_leaderboard SET draws = draws + 1, points = points + 1 WHERE contest_id = ? AND user_id = ?", (contest_id, u0))
+                cursor.execute("UPDATE contest_leaderboard SET draws = draws + 1, points = points + 1 WHERE contest_id = ? AND user_id = ?", (contest_id, u1))
+
+            rows = cursor.execute("""
+                SELECT user_id FROM contest_leaderboard
+                WHERE contest_id = ?
+                ORDER BY points DESC, wins DESC, avg_speed_ms ASC
+            """, (contest_id,)).fetchall()
+
+            for rank_num, r in enumerate(rows, start=1):
+                cursor.execute("UPDATE contest_leaderboard SET rank = ? WHERE contest_id = ? AND user_id = ?", (rank_num, contest_id, r["user_id"]))
+
+            conn.commit()
+
+    def get_contest_leaderboard(self, contest_id: str) -> List[Dict[str, Any]]:
+        """Lấy bảng xếp hạng giải đấu."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            rows = cursor.execute("""
+                SELECT cl.*, u.username, COALESCE(u.display_name, u.username) as display_name, u.avatar_id
+                FROM contest_leaderboard cl
+                JOIN users u ON cl.user_id = u.id
+                WHERE cl.contest_id = ?
+                ORDER BY cl.rank ASC, cl.points DESC, cl.wins DESC
+            """, (contest_id,)).fetchall()
+            return [dict(r) for r in rows]
+
+    def update_contest_status(self, contest_id: str, status: str) -> None:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE contests SET status = ? WHERE id = ?", (status, contest_id))
+            conn.commit()
+
+    # --- USER PROFILE & HISTORY ---
+    def get_user_profile(self, user_id: int) -> Optional[Dict[str, Any]]:
+        """Trả về thông tin tài khoản, rating ELO, tỷ lệ thắng trận và thống kê giải đấu."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            user_row = cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+            if not user_row:
+                return None
+
+            total_matches = cursor.execute("""
+                SELECT COUNT(*) FROM matches WHERE user0_id = ? OR user1_id = ?
+            """, (user_id, user_id)).fetchone()[0]
+
+            wins = cursor.execute("""
+                SELECT COUNT(*) FROM matches WHERE winner_user_id = ?
+            """, (user_id,)).fetchone()[0]
+
+            draws = cursor.execute("""
+                SELECT COUNT(*) FROM matches WHERE (user0_id = ? OR user1_id = ?) AND winner_user_id IS NULL
+            """, (user_id, user_id)).fetchone()[0]
+
+            losses = max(0, total_matches - wins - draws)
+            win_rate = round((wins / total_matches * 100), 1) if total_matches > 0 else 0.0
+
+            contests_count = cursor.execute("""
+                SELECT COUNT(DISTINCT contest_id) FROM contest_drafts WHERE user_id = ?
+            """, (user_id,)).fetchone()[0]
+
+            rating = user_row["rating"] if user_row["rating"] is not None else 1000
+            if rating >= 2000:
+                badge = "Cao Thủ (Grandmaster)"
+            elif rating >= 1600:
+                badge = "Kim Cương (Diamond)"
+            elif rating >= 1400:
+                badge = "Bạch Kim (Platinum)"
+            elif rating >= 1200:
+                badge = "Vàng (Gold)"
+            elif rating >= 1000:
+                badge = "Bạc (Silver)"
+            else:
+                badge = "Đồng (Bronze)"
+
+            return {
+                "id": user_row["id"],
+                "username": user_row["username"],
+                "display_name": user_row["display_name"] or user_row["username"],
+                "role": user_row["role"] or "player",
+                "avatar_id": user_row["avatar_id"] or "robot",
+                "bio": user_row["bio"] or "",
+                "rating": rating,
+                "badge": badge,
+                "stats": {
+                    "total_matches": total_matches,
+                    "wins": wins,
+                    "losses": losses,
+                    "draws": draws,
+                    "win_rate": win_rate,
+                    "contests_count": contests_count
+                }
+            }
+
+    def get_user_history(self, user_id: int) -> Dict[str, Any]:
+        """Trả về danh sách trận đấu và lịch sử tham gia các kỳ contest của user hiện tại."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            user_info = cursor.execute("SELECT username FROM users WHERE id = ?", (user_id,)).fetchone()
+            current_uname = user_info["username"] if user_info else ""
+
+            rows = cursor.execute("""
+                SELECT m.id, m.created_at, m.reason, m.winner_user_id,
+                       u0.username as u0_name, u1.username as u1_name,
+                       m.user0_lang, m.user1_lang
+                FROM matches m
+                JOIN users u0 ON m.user0_id = u0.id
+                JOIN users u1 ON m.user1_id = u1.id
+                WHERE m.user0_id = ? OR m.user1_id = ?
+                ORDER BY m.created_at DESC LIMIT 50
+            """, (user_id, user_id)).fetchall()
+
+            matches = []
+            for r in rows:
+                is_u0 = (r["u0_name"] == current_uname)
+                opponent = r["u1_name"] if is_u0 else r["u0_name"]
+                user_lang = r["user0_lang"] if is_u0 else r["user1_lang"]
+                if r["winner_user_id"] == user_id:
+                    res = "win"
+                elif r["winner_user_id"] is None:
+                    res = "draw"
+                else:
+                    res = "loss"
+                matches.append({
+                    "id": r["id"],
+                    "opponent": opponent,
+                    "result": res,
+                    "reason": r["reason"],
+                    "language": user_lang,
+                    "created_at": r["created_at"]
+                })
+
+            contest_rows = cursor.execute("""
+                SELECT c.id, c.title, c.status, c.game_slug,
+                       cl.rank, cl.points, cl.wins, cl.draws, cl.losses, cl.avg_speed_ms,
+                       cd.passed_test_count, cd.total_test_count, cd.updated_at
+                FROM contests c
+                LEFT JOIN contest_leaderboard cl ON c.id = cl.contest_id AND cl.user_id = ?
+                LEFT JOIN contest_drafts cd ON c.id = cd.contest_id AND cd.user_id = ?
+                WHERE cl.user_id IS NOT NULL OR cd.user_id IS NOT NULL
+                ORDER BY c.created_at DESC
+            """, (user_id, user_id)).fetchall()
+
+            contests = []
+            for cr in contest_rows:
+                contests.append({
+                    "contest_id": cr["id"],
+                    "title": cr["title"],
+                    "status": cr["status"],
+                    "game_slug": cr["game_slug"],
+                    "rank": cr["rank"] or 0,
+                    "points": cr["points"] or 0,
+                    "wins": cr["wins"] or 0,
+                    "draws": cr["draws"] or 0,
+                    "losses": cr["losses"] or 0,
+                    "passed_tests": f"{cr['passed_test_count'] or 0}/{cr['total_test_count'] or 0}",
+                    "avg_speed_ms": cr["avg_speed_ms"] or 0.0,
+                    "updated_at": cr["updated_at"]
+                })
+
+            return {"matches": matches, "contests": contests}
+
+    def change_user_password(self, user_id: int, current_pass: str, new_pass: str) -> Tuple[bool, str]:
+        """Xác thực mật khẩu cũ và đổi mật khẩu mới (SHA256)."""
+        import hashlib
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            user = cursor.execute("SELECT password_hash FROM users WHERE id = ?", (user_id,)).fetchone()
+            if not user:
+                return False, "Người dùng không tồn tại."
+
+            curr_hash = hashlib.sha256(current_pass.encode()).hexdigest()
+            if user["password_hash"] and user["password_hash"] != curr_hash:
+                return False, "Mật khẩu hiện tại không chính xác."
+
+            new_hash = hashlib.sha256(new_pass.encode()).hexdigest()
+            cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, user_id))
+            conn.commit()
+            return True, "Đổi mật khẩu thành công."

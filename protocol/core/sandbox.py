@@ -67,6 +67,10 @@ def run_sandboxed_process(
     cwd: Optional[str] = None
 ) -> Tuple[bool, str, str, str]:
     try:
+        extra_kwargs = {}
+        if sys.platform != "win32":
+            extra_kwargs["preexec_fn"] = lambda: set_sandbox_limits(max_memory_mb)
+
         proc = subprocess.Popen(
             cmd,
             stdin=subprocess.PIPE,
@@ -74,7 +78,7 @@ def run_sandboxed_process(
             stderr=subprocess.PIPE,
             text=True,
             cwd=cwd,
-            preexec_fn=lambda: set_sandbox_limits(max_memory_mb) if sys.platform != "win32" else None
+            **extra_kwargs
         )
 
         stdout, stderr = proc.communicate(input=input_data, timeout=timeout_sec)

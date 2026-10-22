@@ -1,41 +1,201 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Hồ sơ người chơi · Bot Arena</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hồ Sơ Người Chơi</title>
   <link rel="stylesheet" href="css/main.css">
   <link rel="icon" type="image/webp" href="assets/logo.webp">
-<link rel="stylesheet" href="css/profile-page.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/profile-page.css">
 </head>
 <body class="has-navbar">
-  <nav class="navbar"><a class="navbar-brand" href="/"> Bot Arena</a><div class="navbar-actions" id="navbar-actions"></div></nav>
+  <!-- Navbar -->
+  <nav class="navbar" id="main-navbar">
+    <a href="index.html" class="navbar-brand">Bot Arena</a>
+    <ul class="navbar-nav">
+      <li><a href="index.html" id="nav-home">Trang chủ</a></li>
+      <li><a href="arena.html" id="nav-arena">Đấu trường</a></li>
+      <li><a href="leaderboard.html" id="nav-lb">Leaderboard</a></li>
+      <li><a href="guide.html" id="nav-guide">Hướng dẫn</a></li>
+    </ul>
+    <div class="navbar-actions" id="navbar-actions"></div>
+  </nav>
+
   <main class="profile-wrap">
-    <h1 id="page-title">Hồ sơ người chơi</h1>
-    <section id="summary" class="profile-card" aria-live="polite">Đang tải hồ sơ…</section>
-    <section id="edit-section" class="profile-card">
-      <h2>Thông tin hồ sơ</h2>
-      <form id="profile-form" class="profile-form-grid">
-        <div class="form-group"><label for="display-name">Tên hiển thị</label><input id="display-name" class="form-control" maxlength="64" required></div>
-        <div class="form-group"><label for="avatar-id">Ảnh đại diện</label><select id="avatar-id" class="form-control"><option value="robot"> Robot</option><option value="rock"> Đá</option><option value="paper"> Giấy</option><option value="scissors"> Kéo</option><option value="trophy"> Cúp</option></select></div>
-        <div class="form-group"><label for="bio">Giới thiệu (tối đa 280 ký tự)</label><textarea id="bio" class="form-control" maxlength="280"></textarea></div>
-        <label class="privacy-choice"><input id="profile-public" type="checkbox"><span><strong>Hồ sơ công khai</strong><br>Khi tắt, hồ sơ bị ẩn khỏi hồ sơ công khai, bảng xếp hạng và danh sách đối thủ. Replay trận của bạn chỉ người tham gia xem được.</span></label>
-        <button class="btn btn-primary" type="submit">Lưu hồ sơ</button>
-      </form>
-      <p id="profile-url" class="profile-link"></p>
+    <!-- Profile Top Banner -->
+    <header class="profile-header-card" id="profile-header">
+      <div class="profile-heading">
+        <div class="profile-avatar" id="header-avatar" aria-hidden="true">?</div>
+        <div class="profile-identity">
+          <h1>
+            <span id="header-display-name">Đang tải hồ sơ...</span>
+            <span class="rank-badge-tag" id="header-badge">Đang tải...</span>
+          </h1>
+          <div class="username-tag">@<span id="header-username">...</span> · <span id="header-role">Thí sinh</span></div>
+          <p id="header-bio" style="margin-top: 8px; color: var(--text-muted); font-size: 0.9rem;"></p>
+        </div>
+      </div>
+    </header>
+
+    <!-- 3 Tabs Navigation -->
+    <nav class="profile-nav-tabs" role="tablist">
+      <button class="tab-nav-btn active" id="tab-btn-stats" role="tab" aria-selected="true" type="button">
+        📊 Hồ Sơ & Thống Kê
+      </button>
+      <button class="tab-nav-btn" id="tab-btn-history" role="tab" aria-selected="false" type="button">
+        ⚔️ Lịch Sử Đấu & Replay
+      </button>
+      <button class="tab-nav-btn" id="tab-btn-security" role="tab" aria-selected="false" type="button">
+        🔒 Bảo Mật & Đổi Mật Khẩu
+      </button>
+    </nav>
+
+    <!-- TAB 1: Profile & Stats Dashboard -->
+    <section class="tab-panel-section active" id="tab-panel-stats" role="tabpanel">
+      <!-- Thống kê tổng quan -->
+      <div class="stats-dashboard-grid">
+        <div class="stat-box">
+          <div class="stat-box-val" id="stat-elo" style="color: #38bdf8;">1000</div>
+          <div class="stat-box-label">Rating ELO</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-val" id="stat-winrate" style="color: #4ade80;">0.0%</div>
+          <div class="stat-box-label">Tỷ Lệ Thắng</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-val" id="stat-matches">0</div>
+          <div class="stat-box-label">Tổng Số Trận</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-val" id="stat-record" style="font-size: 1.15rem; line-height: 2rem;">
+            <span style="color:#4ade80;" id="stat-w">0W</span> / <span style="color:#facc15;" id="stat-d">0D</span> / <span style="color:#f43f5e;" id="stat-l">0L</span>
+          </div>
+          <div class="stat-box-label">Thắng / Hòa / Thua</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-val" id="stat-contests" style="color: #a855f7;">0</div>
+          <div class="stat-box-label">Giải ICPC Đã Thi</div>
+        </div>
+      </div>
+
+      <!-- Form chỉnh sửa thông tin hồ sơ -->
+      <div class="profile-card">
+        <h2>✏️ Cập Nhật Thông Tin Cá Nhân</h2>
+        <form id="profile-edit-form" class="profile-form-grid">
+          <div class="form-group">
+            <label class="form-label" for="input-display-name">Tên hiển thị</label>
+            <input id="input-display-name" class="form-control" maxlength="64" required placeholder="Nhập tên hiển thị">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="select-avatar">Ảnh đại diện đại diện</label>
+            <select id="select-avatar" class="form-control">
+              <option value="robot">🤖 Robot Thuật Toán</option>
+              <option value="trophy">🏆 Cúp Vàng ICPC</option>
+              <option value="rock">🪨 Quân Đá Tiên Phong</option>
+              <option value="paper">📜 Cuộn Giấy Chiến Lược</option>
+              <option value="scissors">✂️ Kéo Cắt Phản Công</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="textarea-bio">Tiểu sử & Giới thiệu bot (tối đa 280 ký tự)</label>
+            <textarea id="textarea-bio" class="form-control" rows="3" maxlength="280" placeholder="Chia sẻ chiến thuật hoặc ngôn ngữ yêu thích của bạn..."></textarea>
+          </div>
+          <button class="btn btn-primary" type="submit" id="btn-save-profile" style="width: fit-content; padding: 10px 24px;">Lưu Thay Đổi</button>
+        </form>
+        <p id="profile-edit-msg" class="status-msg mt-2"></p>
+      </div>
     </section>
-    <section id="history-section" class="profile-card"><h2>Lịch sử xếp hạng</h2><div id="history"></div></section>
-    <section id="matches-section" class="profile-card" hidden><h2>Trận gần đây</h2><div id="matches"></div></section>
-    <section id="password-section" class="profile-card">
-      <h2>Đổi mật khẩu</h2>
-      <form id="password-form" class="profile-form-grid">
-        <div class="form-group"><label for="current-password">Mật khẩu hiện tại</label><input id="current-password" class="form-control" type="password" autocomplete="current-password" required></div>
-        <div class="form-group"><label for="new-password">Mật khẩu mới (ít nhất 12 ký tự)</label><input id="new-password" class="form-control" type="password" minlength="12" autocomplete="new-password" required></div>
-        <div class="form-group"><label for="confirm-password">Nhập lại mật khẩu mới</label><input id="confirm-password" class="form-control" type="password" minlength="12" autocomplete="new-password" required></div>
-        <button class="btn btn-primary" type="submit">Cập nhật mật khẩu</button>
-      </form>
+
+    <!-- TAB 2: Match History & Replays -->
+    <section class="tab-panel-section" id="tab-panel-history" role="tabpanel">
+      <!-- Lịch sử giải đấu ICPC -->
+      <div class="profile-card">
+        <h2>🏆 Các Kỳ Giải ICPC Contest Đã Tham Gia</h2>
+        <div style="overflow-x: auto;">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Tên Kỳ Thi</th>
+                <th>Bộ Môn</th>
+                <th>Thứ Hạng</th>
+                <th>Điểm Số</th>
+                <th>Kết Quả (W/D/L)</th>
+                <th>Test Pass</th>
+              </tr>
+            </thead>
+            <tbody id="contests-history-body">
+              <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Đang tải lịch sử giải đấu...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Lịch sử các trận đấu đối kháng -->
+      <div class="profile-card">
+        <h2>⚔️ Danh Sách Trận Đấu Đối Kháng Gần Đây</h2>
+        <div style="overflow-x: auto;">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Thời Gian</th>
+                <th>Đối Thủ</th>
+                <th>Kết Quả</th>
+                <th>Ngôn Ngữ</th>
+                <th>Lý Do Kết Thúc</th>
+                <th>Hành Động</th>
+              </tr>
+            </thead>
+            <tbody id="matches-history-body">
+              <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Đang tải lịch sử trận đấu...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </section>
-    <p id="status" class="profile-status" role="status" aria-live="polite"></p>
+
+    <!-- TAB 3: Security & Password Management -->
+    <section class="tab-panel-section" id="tab-panel-security" role="tabpanel">
+      <div class="profile-card">
+        <h2>🛡️ Đổi Mật Khẩu Tài Khoản</h2>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 20px;">
+          Để bảo vệ tài khoản và thuật toán của bạn, vui lòng sử dụng mật khẩu mạnh kết hợp chữ, số và ký tự đặc biệt.
+        </p>
+
+        <form id="password-change-form" class="profile-form-grid">
+          <div class="form-group">
+            <label class="form-label" for="current-password">Mật khẩu hiện tại</label>
+            <input id="current-password" class="form-control" type="password" autocomplete="current-password" required placeholder="Nhập mật khẩu hiện tại">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="new-password">Mật khẩu mới (tối thiểu 6 ký tự)</label>
+            <input id="new-password" class="form-control" type="password" minlength="6" autocomplete="new-password" required placeholder="Nhập mật khẩu mới">
+            <!-- Password Strength Bar -->
+            <div class="password-meter-wrap">
+              <div class="password-meter-bar">
+                <div class="password-meter-fill" id="meter-fill"></div>
+              </div>
+              <div class="password-meter-label" id="meter-label">Độ mạnh mật khẩu: Chưa nhập</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="confirm-password">Xác nhận mật khẩu mới</label>
+            <input id="confirm-password" class="form-control" type="password" minlength="6" autocomplete="new-password" required placeholder="Nhập lại mật khẩu mới">
+            <div id="password-match-msg" style="font-size: 0.78rem; margin-top: 4px;"></div>
+          </div>
+
+          <button class="btn btn-primary" type="submit" id="btn-submit-pwd" style="width: fit-content; padding: 10px 24px;">Cập Nhật Mật Khẩu</button>
+        </form>
+        <p id="password-status-msg" class="status-msg mt-2"></p>
+      </div>
+    </section>
   </main>
+
+  <div class="toast-container" id="toast-container"></div>
+  <script type="module" src="js/auth.js"></script>
+  <script type="module" src="js/app.js"></script>
   <script type="module" src="js/profile.js"></script>
 </body>
 </html>

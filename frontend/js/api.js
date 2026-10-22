@@ -26,7 +26,7 @@ export const api = {
   login: (username, password, remember = false) => request('/login', { method: 'POST', body: JSON.stringify({ username, password, remember }) }),
   register: (payload) => request('/register', { method: 'POST', body: JSON.stringify(payload) }),
   logout: () => request('/logout', { method: 'POST' }),
-  changePassword: (current_password, new_password) => request('/account/password', { method: 'POST', body: JSON.stringify({ current_password, new_password }) }),
+  changePassword: (current_password, new_password) => request('/user/change-password', { method: 'POST', body: JSON.stringify({ current_password, new_password }) }),
   validateCode: (sourceCode, language) => request('/validate', { method: 'POST', body: JSON.stringify({ source_code: sourceCode, language }) }),
   submitCode: (sourceCode, language, versionName) => request('/submissions', { method: 'POST', body: JSON.stringify({ source_code: sourceCode, language, version_name: versionName }) }),
   getSubmissions: () => request('/submissions'),
@@ -81,5 +81,33 @@ export const api = {
     request('/matches/practice', {
       method: 'POST',
       body: JSON.stringify({ source_code: sourceCode, language: language, opponent_type: opponentType, game_slug: gameSlug })
+    }),
+
+  // ICPC Contest APIs
+  getActiveContest: () => request('/contests/active'),
+  runTestSuite: (contestId, payload) =>
+    request('/contests/' + encodeURIComponent(contestId) + '/test-suite', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+  submitContestBot: (contestId, payload = {}) =>
+    request('/contests/' + encodeURIComponent(contestId) + '/submit', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+  getContestLeaderboard: (contestId) =>
+    request('/contests/' + encodeURIComponent(contestId) + '/leaderboard'),
+  triggerContestEvaluate: (contestId) =>
+    request('/contests/' + encodeURIComponent(contestId) + '/evaluate', {
+      method: 'POST'
+    }),
+
+  getUserProfile: () => request('/user/profile'),
+  updateUserProfile: (payload) => request('/user/profile', { method: 'PATCH', body: JSON.stringify(payload) }),
+  getUserHistory: () => request('/user/history'),
+  adminCreateContest: (payload) =>
+    request('/admin/contests', {
+      method: 'POST',
+      body: JSON.stringify(payload)
     }),
 };

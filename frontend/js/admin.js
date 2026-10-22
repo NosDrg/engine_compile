@@ -2,6 +2,150 @@ import { api } from '../js/api.js';
 import { refreshUser, renderNavAuth } from '../js/auth.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
+  const DEFAULT_SAMPLE_TEST_CASES = [
+  {
+    name: "Test 01: Nước đi mở đầu bàn cờ trống",
+    initial_board_state: JSON.stringify({ board: Array(9).fill(null).map(() => Array(9).fill(null)), turn: 0, max_turns: 81 }),
+    expected_constraint: JSON.stringify({ type: "empty_cell" }),
+    timeout_ms: 1000
+  },
+  {
+    name: "Test 02: Tránh ô đã có quân đối thủ",
+    initial_board_state: (() => {
+      const b = Array(9).fill(null).map(() => Array(9).fill(null));
+      b[4][4] = 0; b[4][5] = 1;
+      return JSON.stringify({ board: b, turn: 2, max_turns: 81 });
+    })(),
+    expected_constraint: JSON.stringify({ type: "empty_cell" }),
+    timeout_ms: 1000
+  },
+  {
+    name: "Test 03: Phản xạ phòng thủ bàn cờ đông quân",
+    initial_board_state: (() => {
+      const b = Array(9).fill(null).map(() => Array(9).fill(null));
+      b[3][3] = 1; b[3][4] = 1; b[3][5] = 1;
+      return JSON.stringify({ board: b, turn: 5, max_turns: 81 });
+    })(),
+    expected_constraint: JSON.stringify({ type: "empty_cell" }),
+    timeout_ms: 1000
+  },
+  {
+    name: "Test 04: Đánh giá tốc độ phản hồi tối ưu",
+    initial_board_state: (() => {
+      const b = Array(9).fill(null).map(() => Array(9).fill(null));
+      for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) b[r][c] = (r + c) % 2;
+      return JSON.stringify({ board: b, turn: 9, max_turns: 81 });
+    })(),
+    expected_constraint: JSON.stringify({ type: "empty_cell" }),
+    timeout_ms: 800
+  }
+];
+
+async function loadContestGameSelector() {
+  const gameSelect = document.getElementById('contest-game');
+  if (!gameSelect) return;
+
+  try {
+    const res = await api.getActiveGames();
+    const games = res.games || [];
+    gameSelect.innerHTML = '';
+    
+    if (games.length === 0) {
+      gameSelect.innerHTML = '<option value="default">Caro 9x9 Tiêu chuẩn (default)</option>';
+      return;
+    }
+
+    games.forEach(g => {
+      const opt = document.createElement('option');
+      opt.value = g.slug;
+      opt.textContent = `${g.name} (${g.slug})`;
+      gameSelect.appendChild(opt);
+    });
+  } catch (err) {
+    gameSelect.innerHTML = '<option value="default">Caro 9x9 Tiêu chuẩn (default)</option>';
+  }
+}
+
+loadContestGameSelector();
+
+document.getElementById('btn-load-sample-tc')?.addEventListener('click', () => {
+  const tcBox = document.getElementById('contest-testcases');
+  if (tcBox) {
+    tcBox.value = JSON.stringify(DEFAULT_SAMPLE_TEST_CASES, null, 2);
+  }
+});
+
+document.getElementById('contest-create-form')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const statusEl = document.getElementById('contest-create-status');
+  const btnSubmit = document.getElementById('btn-submit-contest');
+
+  const title = document.getElementById('contest-title').value.trim();
+  const customId = document.getElementById('contest-id').value.trim();
+  const gameSlug = document.getElementById('contest-game').value;
+  const startInput = document.getElementById('contest-start').value;
+  const duration = parseInt(document.getElementById('contest-duration').value, 10) || 60;
+  const ram = parseInt(document.getElementById('contest-ram').value, 10) || 128;
+  const timeout = parseFloat(document.getElementById('contest-timeout').value) || 2.0;
+  const rounds = parseInt(document.getElementById('contest-rounds').value, 10) || 3;
+  const rawTc = document.getElementById('contest-testcases').value.trim();
+
+  // Phân tích cú pháp Test Cases nếu có nhập
+  let testCases = [];
+  if (rawTc) {
+    try {
+      testCases = JSON.parse(rawTc);
+      if (!Array.isArray(testCases)) throw new Error("Dữ liệu test cases phải là một danh sách JSON mảng (Array).");
+    } catch (err) {
+      statusEl.textContent = 'Lỗi cú pháp JSON test cases: ' + err.message;
+      statusEl.style.color = 'var(--danger)';
+      return;
+    }
+  }
+
+  // Định dạng thời gian bắt đầu
+  let startTimeStr = "";
+  if (startInput) {
+    startTimeStr = new Date(startInput).toISOString().replace('T', ' ').substring(0, 19);
+  } else {
+    startTimeStr = new Date().toISOString().replace('T', ' ').substring(0, 19);
+  }
+
+  const payload = {
+    id: customId || undefined,
+    title: title,
+    game_slug: gameSlug,
+    start_time: startTimeStr,
+    duration_minutes: duration,
+    max_memory_mb: ram,
+    run_timeout_sec: timeout,
+    rounds_per_pair: rounds,
+    status: 'RUNNING',
+    test_cases: testCases.length > 0 ? testCases : DEFAULT_SAMPLE_TEST_CASES
+  };
+
+  btnSubmit.disabled = true;
+  statusEl.textContent = 'Đang khởi tạo cuộc thi...';
+  statusEl.style.color = 'var(--text-muted)';
+
+  try {
+    const res = await api.adminCreateContest(payload);
+    statusEl.textContent = `${res.message || 'Tạo kỳ thi thành công!'} (ID: ${res.contest_id})`;
+    statusEl.style.color = 'var(--success)';
+    
+    // Đặt lại form sau khi tạo thành công
+    document.getElementById('contest-title').value = '';
+    document.getElementById('contest-id').value = '';
+    
+    // Tải lại các số liệu thống kê
+    if (typeof loadOverview === 'function') loadOverview();
+  } catch (err) {
+    statusEl.textContent = 'Lỗi: ' + err.message;
+    statusEl.style.color = 'var(--danger)';
+  } finally {
+    btnSubmit.disabled = false;
+  }
+});
   const status = document.getElementById('admin-status');
   const say = (text) => { status.textContent = text || ''; };
   const user = await refreshUser();

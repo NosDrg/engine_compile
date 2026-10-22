@@ -122,7 +122,6 @@ def register(req: RegisterReq, response: Response):
         """, (username, pwd_hash, display_name))
         conn.commit()
         user_id = int(cursor.lastrowid or 0)
-        token = create_access_token(user_id=user_id, username=username, role="player")
 
     # Cấp token JWT
     token = create_access_token(user_id=user_id, username=username, role="player")
@@ -214,24 +213,8 @@ def update_profile(req: ProfileUpdateReq, user: Dict[str, Any] = Depends(get_cur
     return {"success": True, "user": _build_user_dict(user)}
 
 @router.post("/account/password")
-def change_password(req: PasswordChangeReq, request: Request):
-    username = request.cookies.get("arena_user")
-    if not username:
-        raise HTTPException(status_code=401, detail="Chưa đăng nhập.")
-
-    user = db.get_user_by_username(username)
-    if not user:
-        raise HTTPException(status_code=404, detail="Không tìm thấy người dùng.")
-
-    if user.get("password_hash"):
-        current_hash = hashlib.sha256(req.current_password.encode()).hexdigest()
-        if user["password_hash"] != current_hash:
-            raise HTTPException(status_code=400, detail="Mật khẩu hiện tại không đúng.")
-
-    new_hash = hashlib.sha256(req.new_password.encode()).hexdigest()
-    with db._get_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, user["id"]))
-        conn.commit()
-
-    return {"success": True, "message": "Đổi mật khẩu thành công."}
+def change_password(req: PasswordChangeReq, user: Dict[str, Any] = Depends(get_current_user)):
+    ok, msg = db.change_user_password(user["id"], req.current_password, req.new_password)
+    if not ok:
+        raise HTTPException(status_code=400, detail=msg)
+    return {"success": True, "message": msg}
